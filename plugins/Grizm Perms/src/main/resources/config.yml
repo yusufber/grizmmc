@@ -1,0 +1,52 @@
+# ==============================================================================
+# GRIZMMC NETWORK - GRIZMPERMS MERKEZİ ROL, İZİN VE VIP SİSTEMİ
+# ==============================================================================
+
+# Bu sunucunun ağ içindeki kimliği (lobby, skyblock, smp, pvp)
+# Sunucu bazlı izinler ve PvP arena kısıtlamaları bu kimliğe göre uygulanır.
+server-id: "lobby"
+
+# Web Sitesi ve Veri Senkronizasyon Ayarları
+sync:
+  # Mod: "auto" (önce Web API dener, erişilemezse yerel web/data klasörüne bakar), "http" veya "local"
+  mode: "auto"
+
+  # Ana Web API adresi
+  api-url: "https://www.grizm.tech/mc/api/perms.php"
+
+  # Yedek Web API adresi
+  fallback-api-url: "https://grizmmc.dlmtd.com/api/perms.php"
+
+  # Web config.php içerisindeki SERVER_API_KEY ile birebir aynı olmalıdır
+  server-key: "grizm_mc_sec_auth_9471b028"
+
+  # Aynı makinede çalışırken doğrudan paylaşılabilen web/data dizini (opsiyonel)
+  local-web-data-dir: "../../../web/data"
+
+  # Web sitesinden otomatik değişiklik kontrol aralığı (saniye)
+  poll-interval-seconds: 15
+
+  # HTTP zaman aşımı (saniye)
+  timeout-seconds: 5
+
+# Sohbet Biçimlendirme (Chat Formatter)
+chat:
+  enabled: true
+  # Kullanılabilir değişkenler: {prefix}, {player}, {suffix}, {role}, {chat_color}, {message}
+  format: "{prefix}{player}{suffix} &8» {chat_color}{message}"
+
+# VIP Satın Alım Oyun İçi Kutlama ve Duyuru Ayarları
+vip-delivery:
+  broadcast-enabled: true
+  firework-enabled: true
+  title: "&6&l✦ VIP AKTİF ✦"
+  subtitle: "&f{role} &7paketiniz hesabınıza tanımlandı!"
+  broadcast-message: "&8[&f&lGRIZM&7&lMC&8] &f&l{player} &7mağazadan &e&l{role} &7satın aldı! Desteği için teşekkürler! &6✦"
+  expired-message: "&8[&f&lGRIZM&7&lMC&8] &e{role} &7üyeliğinizin süresi sona erdi. Uzatmak için: &fwww.grizm.tech/mc/store.php"
+
+# Genel Mesajlar
+messages:
+  prefix: "&8[&f&lGRIZM&7&lPERMS&8] "
+  no-permission: "&cBu komutu kullanmak için yetkiniz bulunmuyor."
+  store-url: "www.grizm.tech/mc/store.php"
+

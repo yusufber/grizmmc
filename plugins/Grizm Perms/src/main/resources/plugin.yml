@@ -1,0 +1,39 @@
+name: GrizmPerms
+version: '${project.version}'
+main: com.grizmtech.perms.GrizmPermsPlugin
+api-version: '1.21'
+authors: [GrizmTech]
+description: GrizmMC Network Merkezi Rol, İzin, Süreli VIP ve Web Mağaza Senkronizasyon Sistemi
+softdepend:
+  - Vault
+  - PlaceholderAPI
+loadbefore:
+  - Essentials
+  - EssentialsSpawn
+  - TAB
+  - GrizmAuth
+  - GrizmOneBlock
+  - GrizmTowny
+  - WorldEdit
+  - CoreProtect
+  - QuickShop-Hikari
+  - EconomyShopGUI
+
+commands:
+  gperm:
+    description: GrizmPerms rol, izin, VIP ve senkronizasyon yönetim komutu
+    usage: /gperm help
+    aliases: [gperms, grizmperms, yetki]
+  vipbilgi:
+    description: Aktif rütbe, VIP kalan süre ve cüzdan bilgisini gösterir
+    usage: /vipbilgi
+    aliases: [vip, rutbem, vipsure]
+
+permissions:
+  grizmperms.admin:
+    description: Tüm GrizmPerms yönetim komutlarına erişim izni
+    default: op
+  grizmperms.chat.color:
+    description: Sohbette renk kodları (&) kullanabilme izni
+    default: op
+
