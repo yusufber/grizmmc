@@ -1,0 +1,20 @@
+{
+    "grizm": {
+        "username": "Grizm",
+        "email": "admin@grizm.tech",
+        "credits": 1000,
+        "roles": [
+            {
+                "role_id": "owner",
+                "assigned_at": 1762279200,
+                "expires_at": 0,
+                "source": "system_seed"
+            }
+        ],
+        "permissions": [],
+        "server_permissions": {},
+        "pending_deliveries": [],
+        "updated_at": 1762279200
+    }
+}
+

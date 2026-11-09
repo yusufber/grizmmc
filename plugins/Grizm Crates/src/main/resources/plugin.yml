@@ -1,0 +1,33 @@
+name: GrizmCrates
+version: 1.0.0
+main: com.prizmarin.crates.CratesPlugin
+api-version: '1.20'
+author: GrizmMC
+softdepend: [DecentHolograms]
+
+commands:
+  kasakoy:
+    description: Belirtilen hedefe veya blok üzerine kasa yerleştirir.
+    permission: kasa.admin
+    usage: /kasakoy <seviye>
+  kasasil:
+    description: Baktığınız bloktaki kasayı ve hologramını siler.
+    permission: kasa.admin
+    usage: /kasasil
+  kasalist:
+    description: Tüm kayıtlı kasaları listeler.
+    permission: kasa.admin
+    usage: /kasalist
+  kasareload:
+    description: Eklenti konfigürasyonunu ve kasaları yeniden yükler.
+    permission: kasa.admin
+    usage: /kasareload
+  anahtarver:
+    description: Oyuncuya kasa anahtarı verir.
+    permission: kasa.admin
+    usage: /anahtarver <oyuncu> <seviye> [adet]
+
+permissions:
+  kasa.admin:
+    description: Tüm kasa yönetici komutlarını kullanma yetkisi
+    default: op

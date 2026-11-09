@@ -1,0 +1,51 @@
+name: GrizmTowny
+version: '1.0.0'
+main: com.grizmtech.towny.GrizmTowny
+api-version: '1.21.4'
+author: GrizmTech
+description: GrizmMC Network Bütünleşik Paper 1.21.4 Towny SMP, Klan Kuşatma Savaşları ve Işınlanma Eklentisi
+softdepend: [Vault, PlaceholderAPI, Essentials]
+
+commands:
+  town:
+    description: Temel kasaba ve arazi yönetim komutu
+    aliases: [t]
+    usage: /town [alt_komut]
+  war:
+    description: Klan ve kuşatma savaşları yönetim komutu
+    aliases: [siege]
+    usage: /war [alt_komut]
+  rtp:
+    description: Güvenli ve sahipsiz rastgele bir araziye asenkron ışınlar
+    usage: /rtp
+  warp:
+    description: Sunucu veya kasaba warp noktalarına ışınlar
+    usage: /warp [isim]
+  setwarp:
+    description: Sunucu genel warp noktası oluşturur
+    permission: grizmtowny.admin
+    usage: /setwarp <isim> [ucret]
+  delwarp:
+    description: Sunucu warp noktasını siler
+    permission: grizmtowny.admin
+    usage: /delwarp <isim>
+  tpa:
+    description: Bir oyuncuya ışınlanma isteği gönderir
+    usage: /tpa <oyuncu>
+  tpahere:
+    description: Bir oyuncuyu yanınıza çağırmak için istek gönderir
+    usage: /tpahere <oyuncu>
+  tpaccept:
+    description: Gelen ışınlanma isteğini kabul eder
+    usage: /tpaccept
+  tpdeny:
+    description: Gelen ışınlanma isteğini reddeder
+    usage: /tpdeny
+
+permissions:
+  grizmtowny.admin:
+    description: Tüm kasaba ve warp yönetim yetkilerine sahip olur
+    default: op
+  grizmtowny.bypass:
+    description: Arazi ve savaş kısıtlamalarını bypass eder
+    default: op

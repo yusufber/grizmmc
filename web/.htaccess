@@ -1,0 +1,7 @@
+# GrizmMC Web Server Yapılandırması (.htaccess)
+AddDefaultCharset UTF-8
+
+# Güvenlik & Performans Başlıkları (Yalnızca modüller yüklüyse devreye girer)
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>

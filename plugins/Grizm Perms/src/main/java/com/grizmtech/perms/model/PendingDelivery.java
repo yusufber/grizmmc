@@ -28,6 +28,8 @@ public class PendingDelivery {
     @SerializedName("executed_servers")
     private List<String> executedServers = new ArrayList<>();
 
+    private List<RewardCommand> commands = new ArrayList<>();
+
     public String getId() {
         return id == null ? "" : id;
     }
@@ -84,6 +86,15 @@ public class PendingDelivery {
     public List<String> getExecutedServers() {
         if (executedServers == null) executedServers = new ArrayList<>();
         return executedServers;
+    }
+
+    public List<RewardCommand> getCommands() {
+        if (commands == null) commands = new ArrayList<>();
+        return commands;
+    }
+
+    public void setCommands(List<RewardCommand> commands) {
+        this.commands = commands;
     }
 }
 

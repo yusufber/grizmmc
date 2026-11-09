@@ -1,0 +1,441 @@
+# GrizmCrates - Paper 1.20.4+ Gelişmiş Kasa Eklentisi Yapılandırması
+# Kyori Adventure MiniMessage renk etiketleri desteklenir.
+
+prefix: "<gradient:#ff8a00:#e52e71><b>[GrizmCrates]</b></gradient> <gray>»</gray> "
+
+messages:
+  no-permission: "<red>Bu komutu kullanmak için yetkiniz yok!</red>"
+  player-only: "<red>Bu komutu yalnızca oyuncular kullanabilir!</red>"
+  invalid-tier: "<red>Geçersiz kasa kademesi! Mevcut kademeler: <yellow>{tiers}</yellow></red>"
+  player-not-found: "<red>Oyuncu bulunamadı veya çevrimdışı: <yellow>{player}</yellow></red>"
+  key-given: "<green><yellow>{amount}</yellow> adet <yellow>{key}</yellow> anahtarı <aqua>{player}</aqua> adlı oyuncuya verildi.</green>"
+  key-received: "<green>Hesabınıza <yellow>{amount}</yellow> adet <yellow>{key}</yellow> anahtarı eklendi!</green>"
+  no-key: "<red>Bu kasayı açmak için bir {key} <red>anahtarına ihtiyacınız var!</red>"
+  crate-already-opening: "<yellow>Şu anda başka bir kasa açma işlemi devam ediyor, lütfen bekleyin!</yellow>"
+  crate-created: "<green><b>{tier}</b> kasası başarıyla oluşturuldu!</green>"
+  crate-deleted: "<red>Kasa başarıyla kaldırıldı ve hologramı silindi.</red>"
+  crate-not-found: "<red>Baktığınız blokta tanımlı bir kasa bulunamadı!</red>"
+  crate-list-header: "<gold>=== Kayıtlı Kasalar ===</gold>"
+  crate-list-item: "<gray>- <aqua>{id}</aqua> | Kademe: {tier} | Konum: <yellow>{world}, {x}, {y}, {z}</yellow></gray>"
+  crate-list-empty: "<yellow>Henüz yerleştirilmiş bir kasa bulunmuyor.</yellow>"
+  reloaded: "<green>Tüm kasa yapılandırmaları ve ödüller başarıyla yenilendi!</green>"
+  target-block-invalid: "<red>Lütfen bir sandık veya bloğa bakarak bu komutu kullanın!</red>"
+  break-deny: "<red>Bu kasa bloğunu kıramazsınız! Kasayı kaldırmak için <yellow>/kasasil</yellow> veya Shift+Sol Tık kullanın.</red>"
+
+tiers:
+  siradan:
+    display-name: "<white><b>Sıradan Kasa</b></white>"
+    key-name: "<white>Sıradan Kasa Anahtarı</white>"
+    key-material: "TRIPWIRE_HOOK"
+    key-lore:
+      - "<gray>Sıradan kasaları açmak için kullanılır.</gray>"
+      - "<yellow>Kullanmak için kasaya sağ tıklayın.</yellow>"
+    hologram:
+      icon: "IRON_INGOT"
+      lines:
+        - "#ICON: IRON_INGOT"
+        - "<white><b>Sıradan Kasa</b></white>"
+        - "<yellow>Sağ Tık:</yellow> <green>Aç</green> <dark_gray>|</dark_gray> <yellow>Sol Tık:</yellow> <aqua>Önizle</aqua>"
+    rewards:
+      - id: "demir_set"
+        weight: 35
+        display-name: "<white>Demir Savaşçı Seti</white>"
+        commands: []
+        item:
+          material: "IRON_CHESTPLATE"
+          amount: 1
+          name: "<white>Demir Göğüslük</white>"
+          lore:
+            - "<gray>Sağlam demir alaşımından yapılmıştır.</gray>"
+          enchantments:
+            protection: 2
+            unbreaking: 2
+      - id: "demir_kilic"
+        weight: 40
+        display-name: "<white>Keskin Demir Kılıç</white>"
+        commands: []
+        item:
+          material: "IRON_SWORD"
+          amount: 1
+          name: "<white>Demir Kılıç</white>"
+          lore:
+            - "<gray>Temel savaşlar için ideal.</gray>"
+          enchantments:
+            sharpness: 2
+            unbreaking: 1
+      - id: "altin_elma"
+        weight: 25
+        display-name: "<yellow>8x Altın Elma</yellow>"
+        commands: []
+        item:
+          material: "GOLDEN_APPLE"
+          amount: 8
+          name: "<yellow>Altın Elma</yellow>"
+      - id: "para_odulu_siradan"
+        weight: 20
+        display-name: "<green>1.000$ Para Ödülü</green>"
+        commands:
+          - "eco give %player% 1000"
+        item:
+          material: "SUNFLOWER"
+          amount: 1
+          name: "<green>1.000$ Para Çeki</green>"
+          lore:
+            - "<gray>Bakiyenize 1.000$ ekler.</gray>"
+          glowing: true
+      - id: "madenci_kazmasi"
+        weight: 30
+        display-name: "<white>Demir Kazma</white>"
+        commands: []
+        item:
+          material: "IRON_PICKAXE"
+          amount: 1
+          name: "<white>Demir Kazma</white>"
+          enchantments:
+            efficiency: 2
+            unbreaking: 2
+
+  gelismis:
+    display-name: "<green><b>Gelişmiş Kasa</b></green>"
+    key-name: "<green>Gelişmiş Kasa Anahtarı</green>"
+    key-material: "TRIPWIRE_HOOK"
+    key-lore:
+      - "<gray>Gelişmiş kasaları açmak için kullanılır.</gray>"
+      - "<yellow>Kullanmak için kasaya sağ tıklayın.</yellow>"
+    hologram:
+      icon: "EMERALD"
+      lines:
+        - "#ICON: EMERALD"
+        - "<green><b>Gelişmiş Kasa</b></green>"
+        - "<yellow>Sağ Tık:</yellow> <green>Aç</green> <dark_gray>|</dark_gray> <yellow>Sol Tık:</yellow> <aqua>Önizle</aqua>"
+    rewards:
+      - id: "elmas_kilic"
+        weight: 30
+        display-name: "<aqua>Gelişmiş Elmas Kılıç</aqua>"
+        commands: []
+        item:
+          material: "DIAMOND_SWORD"
+          amount: 1
+          name: "<aqua>Gelişmiş Elmas Kılıç</aqua>"
+          enchantments:
+            sharpness: 3
+            looting: 2
+            unbreaking: 2
+      - id: "zumrut_blok"
+        weight: 25
+        display-name: "<green>16x Zümrüt Bloğu</green>"
+        commands: []
+        item:
+          material: "EMERALD_BLOCK"
+          amount: 16
+          name: "<green>Zümrüt Bloğu</green>"
+      - id: "deneyim_sisesi"
+        weight: 35
+        display-name: "<light_purple>32x Tecrübe Şişesi</light_purple>"
+        commands: []
+        item:
+          material: "EXPERIENCE_BOTTLE"
+          amount: 32
+          name: "<light_purple>Tecrübe Şişesi</light_purple>"
+      - id: "para_odulu_gelismis"
+        weight: 20
+        display-name: "<green>5.000$ Para Ödülü</green>"
+        commands:
+          - "eco give %player% 5000"
+        item:
+          material: "SUNFLOWER"
+          amount: 1
+          name: "<green>5.000$ Para Çeki</green>"
+          glowing: true
+      - id: "buyulu_yay"
+        weight: 25
+        display-name: "<green>Avcı Yayı</green>"
+        commands: []
+        item:
+          material: "BOW"
+          amount: 1
+          name: "<green>Avcı Yayı</green>"
+          enchantments:
+            power: 3
+            flame: 1
+            infinity: 1
+
+  nadir:
+    display-name: "<blue><b>Nadir Kasa</b></blue>"
+    key-name: "<blue>Nadir Kasa Anahtarı</blue>"
+    key-material: "TRIPWIRE_HOOK"
+    key-lore:
+      - "<gray>Nadir kasaları açmak için kullanılır.</gray>"
+      - "<yellow>Kullanmak için kasaya sağ tıklayın.</yellow>"
+    hologram:
+      icon: "DIAMOND"
+      lines:
+        - "#ICON: DIAMOND"
+        - "<blue><b>Nadir Kasa</b></blue>"
+        - "<yellow>Sağ Tık:</yellow> <green>Aç</green> <dark_gray>|</dark_gray> <yellow>Sol Tık:</yellow> <aqua>Önizle</aqua>"
+    rewards:
+      - id: "elmas_zırh_seti"
+        weight: 25
+        display-name: "<blue>Nadir Elmas Göğüslük</blue>"
+        commands: []
+        item:
+          material: "DIAMOND_CHESTPLATE"
+          amount: 1
+          name: "<blue>Nadir Elmas Göğüslük</blue>"
+          enchantments:
+            protection: 3
+            unbreaking: 3
+      - id: "nadir_kazma"
+        weight: 30
+        display-name: "<blue>Nadir Elmas Kazma</blue>"
+        commands: []
+        item:
+          material: "DIAMOND_PICKAXE"
+          amount: 1
+          name: "<blue>Nadir Elmas Kazma</blue>"
+          enchantments:
+            efficiency: 4
+            fortune: 2
+            unbreaking: 3
+      - id: "buyulu_altin_elma"
+        weight: 15
+        display-name: "<gold>2x Büyülü Altın Elma</gold>"
+        commands: []
+        item:
+          material: "ENCHANTED_GOLDEN_APPLE"
+          amount: 2
+          name: "<gold>Büyülü Altın Elma</gold>"
+      - id: "para_odulu_nadir"
+        weight: 20
+        display-name: "<green>15.000$ Para Ödülü</green>"
+        commands:
+          - "eco give %player% 15000"
+        item:
+          material: "SUNFLOWER"
+          amount: 1
+          name: "<green>15.000$ Para Çeki</green>"
+          glowing: true
+      - id: "shulker_kutusu"
+        weight: 20
+        display-name: "<light_purple>Mavi Shulker Kutusu</light_purple>"
+        commands: []
+        item:
+          material: "BLUE_SHULKER_BOX"
+          amount: 1
+          name: "<blue>Nadir Sandık Kutusu</blue>"
+
+  epik:
+    display-name: "<dark_purple><b>Epik Kasa</b></dark_purple>"
+    key-name: "<dark_purple>Epik Kasa Anahtarı</dark_purple>"
+    key-material: "TRIPWIRE_HOOK"
+    key-lore:
+      - "<gray>Epik kasaları açmak için kullanılır.</gray>"
+      - "<yellow>Kullanmak için kasaya sağ tıklayın.</yellow>"
+    hologram:
+      icon: "AMETHYST_SHARD"
+      lines:
+        - "#ICON: AMETHYST_SHARD"
+        - "<dark_purple><b>Epik Kasa</b></dark_purple>"
+        - "<yellow>Sağ Tık:</yellow> <green>Aç</green> <dark_gray>|</dark_gray> <yellow>Sol Tık:</yellow> <aqua>Önizle</aqua>"
+    rewards:
+      - id: "netherite_kilic"
+        weight: 20
+        display-name: "<dark_purple>Epik Netherite Kılıç</dark_purple>"
+        commands: []
+        item:
+          material: "NETHERITE_SWORD"
+          amount: 1
+          name: "<dark_purple>Epik Netherite Kılıç</dark_purple>"
+          enchantments:
+            sharpness: 4
+            fire_aspect: 2
+            unbreaking: 3
+            mending: 1
+      - id: "elytra"
+        weight: 15
+        display-name: "<dark_purple>Epik Kanatlar (Elytra)</dark_purple>"
+        commands: []
+        item:
+          material: "ELYTRA"
+          amount: 1
+          name: "<dark_purple>Epik Kanatlar</dark_purple>"
+          enchantments:
+            unbreaking: 3
+            mending: 1
+      - id: "totem"
+        weight: 25
+        display-name: "<yellow>2x Ölümsüzlük Totemi</yellow>"
+        commands: []
+        item:
+          material: "TOTEM_OF_UNDYING"
+          amount: 2
+          name: "<yellow>Ölümsüzlük Totemi</yellow>"
+      - id: "para_odulu_epik"
+        weight: 20
+        display-name: "<green>30.000$ Para Ödülü</green>"
+        commands:
+          - "eco give %player% 30000"
+        item:
+          material: "SUNFLOWER"
+          amount: 1
+          name: "<green>30.000$ Para Çeki</green>"
+          glowing: true
+      - id: "epik_kafa"
+        weight: 15
+        display-name: "<dark_purple>Epik Ejderha Kafası</dark_purple>"
+        commands: []
+        item:
+          material: "PLAYER_HEAD"
+          amount: 1
+          name: "<dark_purple>Epik Koleksiyon Kafası</dark_purple>"
+          skull-texture: "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTRiZjE5ZjRjMzA3ZWY0NTMyNjM4MWYyYmQyNGNiYmU5NjU5YmUyNDQ4NzVhMjQ2YTMyYTc5YmFhZjE1OWVkIn19fQ=="
+
+  mistik:
+    display-name: "<light_purple><b>Mistik Kasa</b></light_purple>"
+    key-name: "<light_purple>Mistik Kasa Anahtarı</light_purple>"
+    key-material: "TRIPWIRE_HOOK"
+    key-lore:
+      - "<gray>Mistik güçlerle donatılmış kasaları açar.</gray>"
+      - "<yellow>Kullanmak için kasaya sağ tıklayın.</yellow>"
+    hologram:
+      icon: "NETHER_STAR"
+      lines:
+        - "#ICON: NETHER_STAR"
+        - "<light_purple><b>Mistik Kasa</b></light_purple>"
+        - "<yellow>Sağ Tık:</yellow> <green>Aç</green> <dark_gray>|</dark_gray> <yellow>Sol Tık:</yellow> <aqua>Önizle</aqua>"
+    rewards:
+      - id: "mistik_kazma"
+        weight: 15
+        display-name: "<light_purple>Mistik Netherite Kazma</light_purple>"
+        commands: []
+        item:
+          material: "NETHERITE_PICKAXE"
+          amount: 1
+          name: "<light_purple>Mistik Kazma</light_purple>"
+          enchantments:
+            efficiency: 5
+            fortune: 3
+            unbreaking: 3
+            mending: 1
+      - id: "mistik_zirh_seti"
+        weight: 15
+        display-name: "<light_purple>Mistik Zırh Göğüslüğü</light_purple>"
+        commands: []
+        item:
+          material: "NETHERITE_CHESTPLATE"
+          amount: 1
+          name: "<light_purple>Mistik Göğüslük</light_purple>"
+          enchantments:
+            protection: 4
+            unbreaking: 3
+            mending: 1
+      - id: "nether_yildizi"
+        weight: 25
+        display-name: "<light_purple>3x Nether Yıldızı</light_purple>"
+        commands: []
+        item:
+          material: "NETHER_STAR"
+          amount: 3
+          name: "<light_purple>Saf Nether Yıldızı</light_purple>"
+          glowing: true
+      - id: "para_odulu_mistik"
+        weight: 20
+        display-name: "<green>75.000$ Para Ödülü</green>"
+        commands:
+          - "eco give %player% 75000"
+        item:
+          material: "SUNFLOWER"
+          amount: 1
+          name: "<green>75.000$ Para Çeki</green>"
+          glowing: true
+      - id: "mistik_kure"
+        weight: 15
+        display-name: "<light_purple>Mistik Güç Küresi</light_purple>"
+        commands: []
+        item:
+          material: "PLAYER_HEAD"
+          amount: 1
+          name: "<light_purple>Mistik Güç Küresi</light_purple>"
+          skull-texture: "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzkxMTQzYjVjYjI5ZWY5N2JhZWE5ZDYwMzI5ZDM4MTgzYThlOTY2ZjhmOWYzYmEwNjliNDM4ZjQzNTY2N2IifX19"
+
+  efsanevi:
+    display-name: "<gold><b>Efsanevi Kasa</b></gold>"
+    key-name: "<gold>Efsanevi Kasa Anahtarı</gold>"
+    key-material: "TRIPWIRE_HOOK"
+    key-lore:
+      - "<gray>Sunucunun en nadir ve görkemli kasası.</gray>"
+      - "<yellow>Kullanmak için kasaya sağ tıklayın.</yellow>"
+    hologram:
+      icon: "NETHERITE_INGOT"
+      lines:
+        - "#ICON: NETHERITE_INGOT"
+        - "<gold><b>Efsanevi Kasa</b></gold>"
+        - "<yellow>Sağ Tık:</yellow> <green>Aç</green> <dark_gray>|</dark_gray> <yellow>Sol Tık:</yellow> <aqua>Önizle</aqua>"
+    rewards:
+      - id: "efsanevi_kilic"
+        weight: 10
+        display-name: "<gold>★ Efsanevi Hükümdar Kılıcı ★</gold>"
+        commands:
+          - "broadcast <gold>Tebrikler! <yellow>%player%</yellow> Efsanevi Kasadan <red>★ Hükümdar Kılıcı ★</red> çıkardı!</gold>"
+        item:
+          material: "NETHERITE_SWORD"
+          amount: 1
+          name: "<gold>★ Efsanevi Hükümdar Kılıcı ★</gold>"
+          lore:
+            - "<gray>Kadim çağlardan kalma nihai kılıç.</gray>"
+            - "<gold>Grizm Efsaneleri Serisi #01</gold>"
+          enchantments:
+            sharpness: 6
+            fire_aspect: 2
+            looting: 3
+            unbreaking: 4
+            mending: 1
+      - id: "efsanevi_zirh"
+        weight: 10
+        display-name: "<gold>★ Efsanevi Titanyum Zırhı ★</gold>"
+        commands: []
+        item:
+          material: "NETHERITE_CHESTPLATE"
+          amount: 1
+          name: "<gold>★ Efsanevi Titanyum Zırhı ★</gold>"
+          lore:
+            - "<gray>Hiçbir darbe bu zırhı aşamaz.</gray>"
+          enchantments:
+            protection: 5
+            unbreaking: 4
+            mending: 1
+      - id: "para_odulu_efsanevi"
+        weight: 25
+        display-name: "<green>200.000$ Dev İkramiye</green>"
+        commands:
+          - "eco give %player% 200000"
+          - "broadcast <green><yellow>%player%</yellow> Efsanevi Kasadan tam <gold>200.000$</gold> kazandı!</green>"
+        item:
+          material: "SUNFLOWER"
+          amount: 1
+          name: "<green>200.000$ Dev İkramiye</green>"
+          glowing: true
+      - id: "efsanevi_vip"
+        weight: 5
+        display-name: "<gold>★ 30 Günlük Özel VIP ★</gold>"
+        commands:
+          - "lp user %player% parent addtemp vip 30d"
+          - "broadcast <gold><yellow>%player%</yellow> Efsanevi Kasadan <aqua>30 Günlük VIP</aqua> kazandı!</gold>"
+        item:
+          material: "NETHERITE_BLOCK"
+          amount: 1
+          name: "<gold>★ 30 Günlük VIP Kuponu ★</gold>"
+          lore:
+            - "<gray>Kullanıldığında 30 günlük VIP verir.</gray>"
+          glowing: true
+      - id: "efsanevi_tac"
+        weight: 15
+        display-name: "<gold>★ Kraliyet Tacı ★</gold>"
+        commands: []
+        item:
+          material: "PLAYER_HEAD"
+          amount: 1
+          name: "<gold>★ Kraliyet Tacı ★</gold>"
+          lore:
+            - "<gray>Kralın ihtişamlı başlığı.</gray>"
+          skull-texture: "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYTE2MDhkMWE5OWU2MmU5YjYwZWIwNmUzM2Q3OTVkZTRiMzQxNjg2ZGI5NTk1NWNhNWIyZWY0YWE2Y2NmZjZlMSJ9fX0="

@@ -1,0 +1,36 @@
+{
+    "BSV-91042": {
+        "id": "BSV-91042",
+        "position": "rehber",
+        "full_name": "Emre Can Aydın",
+        "minecraft_username": "EmreCan_01",
+        "user_email": "emrecan.mc@gmail.com",
+        "age": 17,
+        "discord": "emrecan#4891",
+        "play_time": "Hafta içi 4-5 saat, hafta sonu 7+ saat",
+        "experience": "Daha önce 2 büyük Türk Minecraft sunucusunda toplam 1.5 yıl sunucu rehberliği yaptım. Temel komutlara, ada yönetimine ve oyuncu ilişkilerine hakimim.",
+        "why_us": "GrizmMC Network altyapısı ve monokrom noir tasarımı beni çok etkiledi. Toksik olmayan samimi bir ortamda yeni oyuncuları karşılamak ve sunucuyu büyütmek istiyorum.",
+        "about": "Hızlı klavye kullanırım, sabırlıyım ve kriz anlarında soğukkanlılığımı korurum.",
+        "status": "interview",
+        "admin_note": "Başvurunuz olumlu değerlendirildi! Discord sunucumuzda @Grizm ile iletişime geçerek sesli mülakat saatini kararlaştırabilirsiniz.",
+        "created_at": 1728710000,
+        "updated_at": 1728725000
+    },
+    "BSV-62914": {
+        "id": "BSV-62914",
+        "position": "mimar",
+        "full_name": "Berkant Yıldız",
+        "minecraft_username": "NordicBuilder",
+        "user_email": "berkant.art@gmail.com",
+        "age": 19,
+        "discord": "berkant_build",
+        "play_time": "Günde 5-6 saat",
+        "experience": "FAWE, VoxelSniper, goBrush ve Arceon araçlarını profesyonel seviyede kullanıyorum. Orta çağ ve Cyberpunk temalarında portfolyom bulunmaktadır.",
+        "why_us": "GrizmMC'nin özel noir ve karanlık estetiğine uygun lobi ve arena haritaları tasarlamak istiyorum.",
+        "about": "Portfolyo linkim Discord üzerinden iletilecektir.",
+        "status": "pending",
+        "admin_note": "",
+        "created_at": 1728734000,
+        "updated_at": 1728734000
+    }
+}

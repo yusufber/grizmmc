@@ -1,0 +1,88 @@
+# ==============================================================================
+#            GrizmMC Network - GrizmTowny (Paper 1.21.4) Yapılandırması
+#       Bütünleşik Towny, Klan Kuşatma Savaşları (SiegeWar) ve Işınlanma Motoru
+# ==============================================================================
+
+messages:
+  prefix: "<gradient:#ff8a00:#e52e71><b>GRIZM TOWNY</b></gradient> <dark_gray>»</dark_gray> "
+
+database:
+  # SQLITE veya MYSQL
+  type: "SQLITE"
+  host: "localhost"
+  port: 3306
+  database: "towny"
+  username: "root"
+  password: ""
+
+town:
+  # Kasaba kurma ücreti ($)
+  create-cost: 1000.0
+  # Chunk başına temel sahiplenme ücreti ($)
+  claim-cost: 100.0
+  # Uzak karakol (outpost) alımlarında çarpan (100 * 2.5 = 250$)
+  outpost-multiplier: 2.5
+  # Chunk başına günlük bakım vergisi ($)
+  upkeep-per-chunk: 10.0
+  # Hazine sıfırlandıktan sonraki Harabe Koruması süresi (Saat)
+  # Bu süre bittiğinde koruma tamamen kalkar ve sandıklar yağmaya açılır.
+  ruin-duration-hours: 24
+  # Başlangıç maksimum chunk kapasitesi
+  base-max-claims: 16
+  # Her kasaba seviyesinde eklenen chunk kapasitesi
+  claims-per-level: 8
+  # Başlangıç maksimum vatandaş kapasitesi
+  base-max-members: 10
+  # Her kasaba seviyesinde eklenen vatandaş kapasitesi
+  members-per-level: 5
+
+war:
+  # Savaş ilanı bütçesi ($)
+  declare-cost: 5000.0
+  # Kuşatma Sancağı etki alanı (blok yarıçapı)
+  banner-radius: 24
+  # Kuşatmayı kazanmak için gereken toplam puan
+  points-to-win: 500
+  # Kuşatma alanında öldürülen her düşman için kazanılan puan
+  kill-points: 25
+  # Kuşatma alanında durulan her saniye için kazanılan puan
+  tick-points: 1
+  # Kuşatma alanında ölen savunan/saldıran oyuncunun yeniden doğma gecikmesi (Saniye)
+  respawn-delay-seconds: 15
+  # Savaş bitiminde kaybeden tarafa tanınan barış dokunulmazlığı (Saat)
+  truce-hours: 48
+  # Aktif kuşatma saatleri (Prime-Time): 18:00 - 23:00 arası
+  # Bu saatler dışında Gece Ateşkesi (Peace Window) devreye girer.
+  prime-time-start-hour: 18
+  prime-time-end-hour: 23
+
+rtp:
+  # Minimum ışınlanma mesafesi (blok)
+  min-radius: 500
+  # Maksimum ışınlanma mesafesi (blok)
+  max-radius: 7500
+  # Güvenli yüzey bulmak için maksimum deneme sayısı
+  max-attempts: 10
+  # RTP kullanım bekleme süresi (Saniye)
+  cooldown-seconds: 60
+  # RTP yapılırken çevresinde taranacak sahipsiz chunk yarıçapı
+  claim-safe-radius-chunks: 6
+
+combat:
+  # PvP hasarı alındığında veya verildiğinde aktif kalacak savaş süresi (Saniye)
+  tag-seconds: 15
+  # Savaş halindeyken engellenecek komutlar
+  blocked-commands:
+    - "tpa"
+    - "tpahere"
+    - "tpaccept"
+    - "rtp"
+    - "warp"
+    - "spawn"
+    - "home"
+    - "town spawn"
+    - "t spawn"
+
+tpa:
+  # Işınlanma isteğinin geçerlilik süresi (Saniye)
+  timeout-seconds: 60

@@ -1,0 +1,15 @@
+{
+    "GRIZM25": {
+        "code": "GRIZM25",
+        "type": "credit",
+        "amount": 25,
+        "role_id": "",
+        "duration_days": 0,
+        "max_uses": 100,
+        "used_by": [],
+        "expires_at": 0,
+        "active": true,
+        "created_at": 1762279200
+    }
+}
+

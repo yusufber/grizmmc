@@ -1,0 +1,14 @@
+name: GrizmOneBlock
+version: 1.0
+main: com.grizmtech.oneblock.GrizmOneBlock
+api-version: '1.21'
+author: Yusuf Berk Demirel
+softdepend: [Vault, PlaceholderAPI]
+commands:
+  ada:
+    description: Ada menüsünü açar.
+    aliases: [island, is, oneblock, ob]
+  adaadmin:
+    description: Grizm OneBlock yönetici komutları.
+    aliases: [obadmin, oneblockadmin, isadmin]
+    permission: grizmoneblock.admin

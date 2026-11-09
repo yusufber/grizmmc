@@ -1,0 +1,110 @@
+# ==============================================================================
+# GRIZMMC NETWORK - GRIZM AUTH YAPILANDIRMASI
+# Web API & Launcher Tabanlı Otomatik Kimlik Doğrulama Sistemi
+# ==============================================================================
+
+# Web API Ayarları
+api:
+  # Ana Web API adresi (auth.php dosyasının tam URL'si)
+  url: "https://www.grizm.tech/mc/api/auth.php"
+  
+  # Yedek Web API adresi (Ana API'ye erişilemezse denenir)
+  fallback-url: "https://grizmmc.dlmtd.com/api/auth.php"
+  
+  # Sunucu Güvenlik Anahtarı (config.php içerisindeki SERVER_API_KEY ile aynı olmalıdır)
+  server-key: "grizm_mc_sec_auth_9471b028"
+  
+  # İstek zaman aşımı süresi (saniye)
+  timeout-seconds: 5
+
+# Güvenlik & Doğrulama Kuralları
+security:
+  # Yalnızca resmi GrizmMC Launcher üzerinden başlatılan oyunlara izin verilsin mi?
+  # true ise: Launcher oturumu olmayan veya harici istemciyle giren oyuncular sunucuya sokulmaz.
+  require-launcher: true
+
+  # IP Adresi Doğrulaması: Launcher oturumunu başlatan IP ile oyuna giren IP eşleşsin mi?
+  # (Proxy / BungeeCord / Velocity arkasında 'bungeecord: true' veya Forwarding açık olmalıdır)
+  allow-ip-verification: false
+
+  # Oyuncu Launcher oturumu olmadan girmişse (require-launcher: false iken)
+  # /login <code> komutu ile web profilindeki tek kullanımlık kodla giriş yapabilsin mi?
+  allow-code-login: true
+
+  # Launcher oturumunun sunucuya bağlanma geçerlilik süresi (saniye)
+  session-timeout-seconds: 300
+
+  # Launcher zorunluluğundan muaf oyuncu isimleri (acil durum / konsol için)
+  whitelist-bypass:
+    - "Grizm"
+
+# Doğrulanmamış Oyuncuyu Kısıtlama Ayarları (Fallback modunda geçerlidir)
+protection:
+  # Giriş yapana kadar oyuncuyu dondur (hareket edemez)
+  freeze-unauthenticated: true
+
+  # Körlük efekti ver (ekran kararır)
+  blindness: true
+
+  # Giriş için tanınan azami süre (saniye). Süre dolunca sunucudan atılır.
+  login-timeout-seconds: 60
+
+# Ses Efektleri (1.21 Paper / Spigot ses isimleri)
+sounds:
+  success: "ENTITY_PLAYER_LEVELUP"
+  error: "ENTITY_VILLAGER_NO"
+  prompt: "BLOCK_NOTE_BLOCK_PLING"
+
+# Mesajlar ve Başlıklar (Renk kodları: & veya Hex: &#FFFFFF desteklenir)
+messages:
+  prefix: "&8[&f&lGRIZM&8] "
+
+  # Launcher Olmadan Bağlanmaya Çalışan Oyuncuya Gösterilecek Kick Ekranı
+  kick-launcher-required: |
+    &0--------------------------------------------------
+    &f&lGRIZM&7&lMC NETWORK &8» &c&lGİRİŞ REDDEDİLDİ
+    &0--------------------------------------------------
+    &7Bu sunucuya yalnızca resmi &f&lGrizmMC Launcher &7ile
+    &7güvenli şekilde giriş yapabilirsiniz.
+
+    &e&lResmi Launcher'ı ücretsiz indirmek için:
+    &bhttps://www.grizm.tech/mc/launcher.php
+
+    &7Eğer Launcher açık ise lütfen Launcher üzerindeki
+    &a&lOYNA &7butonuna basarak oyunu başlatınız.
+    &0--------------------------------------------------
+
+  # Web sitesinde henüz kayıt olmamış oyuncu kick ekranı
+  kick-not-registered: |
+    &0--------------------------------------------------
+    &f&lGRIZM&7&lMC NETWORK &8» &c&lHESAP BULUNAMADI
+    &0--------------------------------------------------
+    &7Minecraft adınız web sitemize kayıtlı değil.
+    
+    &eKayıt olmak ve kullanıcı adınızı belirlemek için:
+    &bhttps://www.grizm.tech/mc/login.php
+    &0--------------------------------------------------
+
+  # Launcher ile Doğrulanan Oyuncuya Hoş Geldin Başlığı
+  welcome-title: "&f&lGRIZM&7&lMC"
+  welcome-subtitle: "&a✔ Launcher ile başarıyla doğrulandınız!"
+
+  # Aksiyon Çubuğu (Action Bar) Bildirimi
+  actionbar-verified: "&a✔ GrizmMC Launcher Doğrulaması Aktif"
+
+  # Giriş Kodu İsteme Mesajı (require-launcher: false iken)
+  code-prompt: |
+    &8--------------------------------------------------
+    &f&lGRIZM&7&lMC &8» &eGrizmID Girişi Gerekli!
+    &7Web profilinizden aldığınız 6 haneli kodu yazın:
+    &a/login <kod> &7veya &a/grizmauth <code>
+    &8--------------------------------------------------
+
+  code-success: "&aGrizmID hesabınız başarıyla doğrulandı! İyi oyunlar."
+  code-invalid: "&cGeçersiz veya süresi dolmuş giriş kodu! Lütfen kontrol edin."
+  timeout-kick: "&cBelirtilen süre içerisinde giriş yapmadığınız için sunucudan çıkarıldınız."
+  command-blocked: "&cGiriş yapmadan önce komut kullanamazsınız!"
+  chat-blocked: "&cGiriş yapmadan önce sohbete yazamazsınız!"
+  already-logged-in: "&aZaten başarıyla giriş yapmış durumdasınız."
+  reload-success: "&aGrizmAuth yapılandırması başarıyla yeniden yüklendi!"
+  no-permission: "&cBu komutu kullanmak için yetkiniz bulunmamaktadır."

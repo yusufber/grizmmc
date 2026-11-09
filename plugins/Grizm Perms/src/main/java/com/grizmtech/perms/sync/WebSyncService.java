@@ -296,20 +296,30 @@ public class WebSyncService {
             boolean didCelebrateNow = false;
             boolean didRunCommandsNow = false;
 
-            // 1. Kutlama (Title, Ses, Havai Fişek, Sunucu Duyurusu) -> Yalnızca 1 kez
-            if (!del.isCelebrated() && celebratedIds.add(del.getId())) {
+            // 1. Kutlama (Title, Ses, Havai Fişek, Sunucu Duyurusu) -> Yalnızca 1 kez (Eğer rol teslimatı ise)
+            if (role != null && !del.isCelebrated() && celebratedIds.add(del.getId())) {
                 del.setCelebrated(true);
                 didCelebrateNow = true;
                 triggerVipCelebration(player, roleDisplay);
+            } else if (role == null && !del.isCelebrated()) {
+                del.setCelebrated(true);
             }
 
-            // 2. Sunucuya Özel Ödül Komutları
+            // 2. Sunucuya Özel Ödül Komutları VEYA Doğrudan Teslimat Komutları
             String execTrackKey = del.getId() + ":" + srvId;
-            if (role != null && !role.getVipRewardCommands().isEmpty()
+            List<RewardCommand> candidateCmds = new ArrayList<>();
+            if (role != null && !role.getVipRewardCommands().isEmpty()) {
+                candidateCmds.addAll(role.getVipRewardCommands());
+            }
+            if (del.getCommands() != null && !del.getCommands().isEmpty()) {
+                candidateCmds.addAll(del.getCommands());
+            }
+
+            if (!candidateCmds.isEmpty()
                     && !del.getExecutedServers().contains(srvId)
                     && executedDeliveryServerKeys.add(execTrackKey)) {
 
-                for (RewardCommand rc : role.getVipRewardCommands()) {
+                for (RewardCommand rc : candidateCmds) {
                     String targetSrv = rc.getServer();
                     boolean shouldRun = false;
 
@@ -329,7 +339,7 @@ public class WebSyncService {
                             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), finalCmd);
                             didRunCommandsNow = true;
                         } catch (Exception ex) {
-                            plugin.getLogger().log(Level.WARNING, "[GrizmPerms] VIP ödül komutu hatası: " + finalCmd, ex);
+                            plugin.getLogger().log(Level.WARNING, "[GrizmPerms] Teslimat komutu hatası: " + finalCmd, ex);
                         }
                     }
                 }

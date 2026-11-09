@@ -1,0 +1,33 @@
+name: GrizmAuth
+version: 1.0.0
+main: com.grizmtech.auth.GrizmAuth
+api-version: '1.21'
+author: Yusuf Berk Demirel
+description: GrizmMC Network Launcher ve Web API Tabanlı Kimlik Doğrulama Eklentisi
+website: https://www.grizm.tech/mc
+
+commands:
+  grizmauth:
+    description: GrizmAuth ana yönetim ve oyuncu doğrulama komutu
+    aliases: [gauth, auth]
+    permission: grizmauth.use
+    usage: /grizmauth [reload|status|check|code]
+  login:
+    description: GrizmID doğrulama komutu
+    aliases: [l, giris]
+    usage: /login <code>
+  link:
+    description: Web hesabını sunucuya bağlama komutu
+    aliases: [bagla]
+    usage: /link <code>
+
+permissions:
+  grizmauth.use:
+    description: Temel auth komutlarını kullanma yetkisi
+    default: true
+  grizmauth.admin:
+    description: GrizmAuth yönetici yetkisi
+    default: op
+  grizmauth.bypass:
+    description: Launcher zorunluluğunu atlama yetkisi
+    default: false
