@@ -64,10 +64,14 @@ public class WarManager {
         }.runTaskTimer(plugin, 20L, 20L); // Her saniye (20 tick)
     }
 
-    private void checkWarsTick() {
+    public boolean isPrimeTime() {
         LocalTime now = LocalTime.now();
         int currentHour = now.getHour();
-        boolean isPrimeTime = (currentHour >= configManager.getPrimeTimeStartHour() && currentHour < configManager.getPrimeTimeEndHour());
+        return (currentHour >= configManager.getPrimeTimeStartHour() && currentHour < configManager.getPrimeTimeEndHour());
+    }
+
+    private void checkWarsTick() {
+        boolean isPrimeTime = isPrimeTime();
 
         double radius = configManager.getSiegeBannerRadius();
         int winScore = configManager.getSiegePointsToWin();
@@ -233,6 +237,22 @@ public class WarManager {
         SiegeWar war = activeWars.get(warId);
         if (war == null) {
             MessageUtil.sendMessage(player, "<red>Geçersiz savaş sancağı!</red>");
+            return false;
+        }
+
+        TownMember member = townManager.getMember(player.getUniqueId());
+        if (member == null || !member.getTownUuid().equals(war.getAttackerTownUuid()) || !member.getRole().canDeclareWar()) {
+            MessageUtil.sendMessage(player, "<red>Kuşatma sancağını yalnızca saldıran kasabanın yetkilileri dikebilir!</red>");
+            return false;
+        }
+
+        if (war.getBannerLocation() != null) {
+            MessageUtil.sendMessage(player, "<red>Bu savaş için kuşatma sancağı zaten dikilmiş!</red>");
+            return false;
+        }
+
+        if (!isPrimeTime()) {
+            MessageUtil.sendMessage(player, "<red>Kuşatma sancağı yalnızca Prime-Time saatlerinde dikilebilir!</red>");
             return false;
         }
 

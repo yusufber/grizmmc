@@ -82,7 +82,7 @@ public class StackerListener implements Listener {
             // Spawner istifleme
             event.setCancelled(true);
             Player player = event.getPlayer();
-            player.getInventory().getItemInMainHand().subtract(1);
+            player.getInventory().getItem(event.getHand()).subtract(1);
             player.sendMessage(Component.text("Spawner başarıyla istiflendi!").color(NamedTextColor.GREEN));
             player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_ANVIL_USE, 0.6f, 1.4f);
         }

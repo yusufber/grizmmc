@@ -200,7 +200,8 @@ class ServerManager {
         // Screen veya PID kontrolü (Linux ve Windows için)
         $processRunning = false;
         if (!self::isWindows()) {
-            $screenCheck = @shell_exec("screen -list 2>/dev/null | grep -E '\." . escapeshellarg($srv['screen_name']) . "\b'");
+            $pattern = '\.' . preg_quote($srv['screen_name'], '/') . '\b';
+            $screenCheck = @shell_exec("screen -list 2>/dev/null | grep -E " . escapeshellarg($pattern));
             $processRunning = !empty($screenCheck);
         }
 
@@ -410,6 +411,7 @@ class ServerManager {
         }
 
         $srv = $servers[$key];
+        $command = preg_replace('/[\x00-\x1F\x7F]/', '', (string)$command);
         $command = trim($command);
         if (empty($command)) {
             return ['success' => false, 'message' => 'Komut boş olamaz.'];
@@ -434,9 +436,9 @@ class ServerManager {
 
         // RCON yoksa veya Velocity ise Linux screen oturumuna yaz
         if (!self::isWindows()) {
-            $screenName = escapeshellcmd($srv['screen_name']);
-            $escapedCmd = addcslashes($command, '"\\$`');
-            exec("screen -S {$screenName} -X stuff \"{$escapedCmd}\n\" 2>&1", $out, $ret);
+            $screenName = escapeshellarg($srv['screen_name']);
+            $stuffPayload = escapeshellarg($command . "\n");
+            exec("screen -S {$screenName} -X stuff {$stuffPayload} 2>&1", $out, $ret);
             return [
                 'success' => ($ret === 0),
                 'source' => 'screen',

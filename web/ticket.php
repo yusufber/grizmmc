@@ -35,6 +35,7 @@ if (!$isOwner && !$isStaff) {
 
 // POST: Mesaj Yanıtlama
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'reply') {
+    verify_csrf_token();
     $replyText = trim($_POST['message'] ?? '');
 
     if (empty($replyText)) {
@@ -55,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 // POST: Durum Güncelleme
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_status') {
+    verify_csrf_token();
     $newStatus = trim($_POST['status'] ?? '');
 
     if (isset($TICKET_STATUSES[$newStatus])) {
@@ -122,6 +124,7 @@ require_once __DIR__ . '/includes/navbar.php';
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
           <?php if ($ticket['status'] !== 'closed'): ?>
             <form method="POST" action="ticket.php?id=<?php echo urlencode($ticket['id']); ?>" style="display: inline;">
+              <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(get_csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
               <input type="hidden" name="action" value="update_status">
               <input type="hidden" name="status" value="closed">
               <button type="submit" class="btn btn-ghost btn-sm" style="color: #ff7b72; border-color: rgba(255, 123, 114, 0.4);" onclick="return confirm('Bu destek talebini kapatmak istediğinize emin misiniz?');">
@@ -131,6 +134,7 @@ require_once __DIR__ . '/includes/navbar.php';
             </form>
           <?php else: ?>
             <form method="POST" action="ticket.php?id=<?php echo urlencode($ticket['id']); ?>" style="display: inline;">
+              <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(get_csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
               <input type="hidden" name="action" value="update_status">
               <input type="hidden" name="status" value="open">
               <button type="submit" class="btn btn-ghost btn-sm" style="color: #58a6ff; border-color: rgba(88, 166, 255, 0.4);">
@@ -142,6 +146,7 @@ require_once __DIR__ . '/includes/navbar.php';
 
           <?php if ($ticket['status'] !== 'resolved' && $ticket['status'] !== 'closed'): ?>
             <form method="POST" action="ticket.php?id=<?php echo urlencode($ticket['id']); ?>" style="display: inline;">
+              <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(get_csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
               <input type="hidden" name="action" value="update_status">
               <input type="hidden" name="status" value="resolved">
               <button type="submit" class="btn btn-primary btn-sm">
@@ -178,6 +183,7 @@ require_once __DIR__ . '/includes/navbar.php';
           <span style="font-size: 0.85rem; color: #fff;">Bu talebin durumunu manuel olarak değiştirebilirsiniz:</span>
         </div>
         <form method="POST" action="ticket.php?id=<?php echo urlencode($ticket['id']); ?>" style="display: flex; align-items: center; gap: 10px;">
+          <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(get_csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
           <input type="hidden" name="action" value="update_status">
           <select name="status" class="form-select" style="padding: 6px 12px; font-size: 0.85rem; width: auto;" onchange="this.form.submit()">
             <?php foreach ($TICKET_STATUSES as $k => $st): ?>
@@ -243,6 +249,7 @@ require_once __DIR__ . '/includes/navbar.php';
         </p>
 
         <form method="POST" action="ticket.php?id=<?php echo urlencode($ticket['id']); ?>">
+          <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(get_csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
           <input type="hidden" name="action" value="reply">
 
           <div class="form-group">

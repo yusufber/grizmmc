@@ -402,28 +402,28 @@ require_once __DIR__ . '/includes/navbar.php';
           <div class="stat-icon"><i class="fa-solid fa-layer-group"></i></div>
           <div class="stat-info">
             <span class="stat-label">Tanımlı Roller</span>
-            <strong class="stat-value" id="statRolesCount"><?php echo count(gperm_get_roles()); ?> Grup</strong>
+            <strong class="stat-value" id="statRolesCount"><?php echo $isUnlocked ? (count(gperm_get_roles()) . ' Grup') : 'Kilitli'; ?></strong>
           </div>
         </div>
         <div class="stat-card">
           <div class="stat-icon"><i class="fa-solid fa-user-shield"></i></div>
           <div class="stat-info">
             <span class="stat-label">Yetkili / VIP Kayıtları</span>
-            <strong class="stat-value" id="statUsersCount"><?php echo count(gperm_get_all_user_perms(false)); ?> Oyuncu</strong>
+            <strong class="stat-value" id="statUsersCount"><?php echo $isUnlocked ? (count(gperm_get_all_user_perms(false)) . ' Oyuncu') : 'Kilitli'; ?></strong>
           </div>
         </div>
         <div class="stat-card">
           <div class="stat-icon"><i class="fa-solid fa-ticket"></i></div>
           <div class="stat-info">
             <span class="stat-label">Aktif Kupon Kodları</span>
-            <strong class="stat-value" id="statCouponsCount"><?php echo count(gperm_get_coupons()); ?> Kod</strong>
+            <strong class="stat-value" id="statCouponsCount"><?php echo $isUnlocked ? (count(gperm_get_coupons()) . ' Kod') : 'Kilitli'; ?></strong>
           </div>
         </div>
         <div class="stat-card">
           <div class="stat-icon"><i class="fa-solid fa-bolt"></i></div>
           <div class="stat-info">
             <span class="stat-label">Senkron Revizyonu</span>
-            <strong class="stat-value" id="statRevisionVal">#<?php echo intval($syncMeta['revision'] ?? 1); ?></strong>
+            <strong class="stat-value" id="statRevisionVal"><?php echo $isUnlocked ? ('#' . intval($syncMeta['revision'] ?? 1)) : 'Kilitli'; ?></strong>
           </div>
         </div>
       </div>
@@ -443,12 +443,12 @@ require_once __DIR__ . '/includes/navbar.php';
             </div>
             <div id="pinErrorMsg" class="pin-error-msg"></div>
           </form>
-          <span class="pin-hint"><i class="fa-solid fa-info-circle"></i> Varsayılan PIN: <code>Grizm2026!</code></span>
         </div>
       </div>
 
       <!-- ANA YÖNETİM PANELİ GÖVDESİ -->
       <div id="adminPanelContent" class="<?php echo !$isUnlocked ? 'blurred-content' : ''; ?>">
+      <?php if ($isUnlocked): ?>
 
         <!-- Sekme Menüsü -->
         <div class="gp-tabs">
@@ -797,7 +797,7 @@ require_once __DIR__ . '/includes/navbar.php';
                 <div style="color: #888; margin-bottom: 4px;">Webhook URL:</div>
                 <div style="color: #fff; word-break: break-all;"><?php echo htmlspecialchars(SITE_URL . '/api/perms.php?action=payment_webhook'); ?></div>
                 <div style="color: #888; margin-top: 8px; margin-bottom: 4px;">Header (`X-Webhook-Secret`):</div>
-                <div style="color: #fff;"><?php echo htmlspecialchars(PAYMENT_WEBHOOK_SECRET); ?></div>
+                <div style="color: #fff;">********</div>
               </div>
               <div style="background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; font-family: var(--font-mono); font-size: 0.75rem; color: #d4d4d8; white-space: pre-wrap;">{
   "order_id": "SHP-9001",
@@ -830,6 +830,7 @@ require_once __DIR__ . '/includes/navbar.php';
           </div>
         </div>
 
+      <?php endif; ?>
       </div>
     </div>
     <?php endif; ?>
@@ -1123,12 +1124,18 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('btnLockPanel')?.addEventListener('click', async () => {
-    await fetch('api/perms.php?action=lock_panel');
+    await fetch('api/perms.php?action=lock_panel', {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': window.GRIZM_CSRF_TOKEN || '' }
+    });
     location.reload();
   });
 
   document.getElementById('btnForceSync')?.addEventListener('click', async () => {
-    const res = await fetch('api/perms.php?action=admin_force_sync', { method: 'POST' });
+    const res = await fetch('api/perms.php?action=admin_force_sync', {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': window.GRIZM_CSRF_TOKEN || '' }
+    });
     const data = await res.json();
     showToast(data.message || 'Senkronizasyon tetiklendi.');
     loadAdminOverview();
@@ -1147,7 +1154,10 @@ async function handlePermPinSubmit(e) {
 
   const res = await fetch('api/perms.php?action=unlock_panel', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': window.GRIZM_CSRF_TOKEN || ''
+    },
     body: JSON.stringify({ pin })
   });
   const data = await res.json();
@@ -1379,7 +1389,10 @@ async function saveCurrentRole(e) {
 
   const res = await fetch('api/perms.php?action=admin_save_role', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': window.GRIZM_CSRF_TOKEN || ''
+    },
     body: JSON.stringify(payload)
   });
   const data = await res.json();
@@ -1398,7 +1411,10 @@ async function deleteCurrentRole() {
 
   const res = await fetch('api/perms.php?action=admin_delete_role', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': window.GRIZM_CSRF_TOKEN || ''
+    },
     body: JSON.stringify({ id: SELECTED_ROLE_ID })
   });
   const data = await res.json();
@@ -1487,7 +1503,10 @@ async function handleAdminGrantRole(e) {
   };
   const res = await fetch('api/perms.php?action=admin_grant_role', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': window.GRIZM_CSRF_TOKEN || ''
+    },
     body: JSON.stringify(payload)
   });
   const data = await res.json();
@@ -1499,7 +1518,10 @@ async function revokeUserRole(username, roleId) {
   if (!confirm(`${username} oyuncusundan '${roleId}' rolünü kaldırmak istiyor musunuz?`)) return;
   const res = await fetch('api/perms.php?action=admin_revoke_role', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': window.GRIZM_CSRF_TOKEN || ''
+    },
     body: JSON.stringify({ username, role_id: roleId })
   });
   const data = await res.json();
@@ -1516,7 +1538,10 @@ async function handleAdminCredits(e) {
   };
   const res = await fetch('api/perms.php?action=admin_adjust_credits', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': window.GRIZM_CSRF_TOKEN || ''
+    },
     body: JSON.stringify(payload)
   });
   const data = await res.json();
@@ -1538,7 +1563,10 @@ async function saveUserCustomPerms(e) {
   const permissions = document.getElementById('uPermGlobalArea').value;
   const res = await fetch('api/perms.php?action=admin_save_user_perms', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': window.GRIZM_CSRF_TOKEN || ''
+    },
     body: JSON.stringify({ username, permissions })
   });
   const data = await res.json();
@@ -1566,7 +1594,10 @@ async function handleCreateCoupon(e) {
   };
   const res = await fetch('api/perms.php?action=admin_create_coupon', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': window.GRIZM_CSRF_TOKEN || ''
+    },
     body: JSON.stringify(payload)
   });
   const data = await res.json();
@@ -1581,7 +1612,10 @@ async function deleteCoupon(code) {
   if (!confirm(`'${code}' kupon kodunu silmek istiyor musunuz?`)) return;
   const res = await fetch('api/perms.php?action=admin_delete_coupon', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': window.GRIZM_CSRF_TOKEN || ''
+    },
     body: JSON.stringify({ code })
   });
   const data = await res.json();
@@ -1641,11 +1675,15 @@ function renderOrdersTable() {
   }).join('');
 }
 </script>
+<?php endif; ?>
 
 <script>
 // ============================================================================
 // KASA & ANAHTAR MARKETİ İSTEMCİ SCRIPTI
 // ============================================================================
+function escapeHtmlStore(str) {
+  return String(str ?? '').replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
+}
 function selectCrateBundle(btn, tier) {
   const card = btn.closest('.crate-card');
   if (!card) return;
@@ -1781,7 +1819,10 @@ async function submitCratePurchase(e) {
   try {
     const res = await fetch('api/perms.php?action=buy_crate_key', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': window.GRIZM_CSRF_TOKEN || ''
+      },
       body: JSON.stringify({
         tier: tier,
         amount: amount,
@@ -1806,7 +1847,7 @@ async function submitCratePurchase(e) {
         feedbackMsg.style.background = 'rgba(255, 255, 255, 0.08)';
         feedbackMsg.style.border = '1px solid rgba(255, 255, 255, 0.35)';
         feedbackMsg.style.color = '#ffffff';
-        feedbackMsg.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> <strong>${data.message}</strong>`;
+        feedbackMsg.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> <strong>${escapeHtmlStore(data.message)}</strong>`;
       }
 
       if (typeof showToast === 'function') showToast(data.message);
@@ -1819,7 +1860,7 @@ async function submitCratePurchase(e) {
         feedbackMsg.style.background = 'rgba(255, 85, 85, 0.1)';
         feedbackMsg.style.border = '1px solid rgba(255, 85, 85, 0.4)';
         feedbackMsg.style.color = '#fca5a5';
-        feedbackMsg.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${data.message || 'İşlem gerçekleştirilemedi.'}`;
+        feedbackMsg.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${escapeHtmlStore(data.message || 'İşlem gerçekleştirilemedi.')}`;
       }
       submitBtn.disabled = false;
       submitBtn.innerHTML = origBtnHtml;
@@ -1845,6 +1886,5 @@ document.addEventListener('click', (e) => {
   }
 });
 </script>
-<?php endif; ?>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

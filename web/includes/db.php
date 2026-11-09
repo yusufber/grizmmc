@@ -32,12 +32,12 @@ function save_user_profile($email, $data) {
     $dir = dirname(__DIR__) . '/data';
     if (!is_dir($dir)) {
         @mkdir($dir, 0755, true);
-        @file_put_contents($dir . '/.htaccess', "Deny from all\n");
+        @file_put_contents($dir . '/.htaccess', "<IfModule mod_authz_core.c>\n    Require all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n    Order allow,deny\n    Deny from all\n</IfModule>\n");
     }
     $users = get_all_saved_users();
     $key = strtolower(trim($email));
     $users[$key] = array_merge($users[$key] ?? [], $data);
-    @file_put_contents(get_users_file_path(), json_encode($users, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+    @file_put_contents(get_users_file_path(), json_encode($users, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
 }
 
 // ============================================================================
@@ -62,9 +62,9 @@ function save_sessions_list($sessions) {
     $dir = dirname(__DIR__) . '/data';
     if (!is_dir($dir)) {
         @mkdir($dir, 0755, true);
-        @file_put_contents($dir . '/.htaccess', "Deny from all\n");
+        @file_put_contents($dir . '/.htaccess', "<IfModule mod_authz_core.c>\n    Require all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n    Order allow,deny\n    Deny from all\n</IfModule>\n");
     }
-    @file_put_contents(get_sessions_file_path(), json_encode($sessions, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+    @file_put_contents(get_sessions_file_path(), json_encode($sessions, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
 }
 
 function create_launcher_session($username, $token, $email = '', $ip = '') {
@@ -112,6 +112,14 @@ function verify_launcher_session($username, $ip = '') {
     // Süre kontrolü
     if ($now > ($session['expires_at'] ?? 0)) {
         return null;
+    }
+
+    // İstemci IP doğrulaması (yerel geliştirme IP'leri hariç)
+    $ip = trim($ip);
+    if ($ip !== '' && !empty($session['client_ip']) && $ip !== '127.0.0.1' && $session['client_ip'] !== '127.0.0.1') {
+        if ($session['client_ip'] !== $ip) {
+            return null;
+        }
     }
 
     // Başarıyla doğrulandı, claimed olarak güncelle ve oyunda kalma süresince (2 saat) uzat

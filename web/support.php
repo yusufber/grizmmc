@@ -8,6 +8,7 @@ require_once __DIR__ . '/config.php';
 
 // Form Gönderimi (Yeni Bilet Oluşturma)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_ticket') {
+    verify_csrf_token();
     if (!is_logged_in()) {
         $_SESSION['flash_error'] = 'Destek talebi açmak için lütfen önce giriş yapın.';
         header('Location: login.php');
@@ -108,10 +109,6 @@ require_once __DIR__ . '/includes/navbar.php';
             <span class="staff-pill"><i class="fa-solid fa-shield-check"></i> Yetkili</span>
           <?php endif; ?>
         </div>
-        <a href="?toggle_staff=1" class="btn btn-ghost btn-sm" title="Test ve yetkili modunu değiştir">
-          <i class="fa-solid fa-sliders"></i>
-          <span><?php echo $isStaff ? 'Oyuncu Moduna Geç' : 'Yetkili Moduna Geç (Test)'; ?></span>
-        </a>
       </div>
     <?php endif; ?>
 
@@ -309,6 +306,7 @@ require_once __DIR__ . '/includes/navbar.php';
         </div>
 
         <form method="POST" action="support.php">
+          <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(get_csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
           <input type="hidden" name="action" value="create_ticket">
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="form-row">

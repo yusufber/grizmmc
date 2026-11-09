@@ -56,7 +56,10 @@ public class Warp {
     public float getYaw() { return yaw; }
     public float getPitch() { return pitch; }
     public double getVisitCost() { return visitCost; }
-    public void setVisitCost(double visitCost) { this.visitCost = visitCost; }
+    public void setVisitCost(double cost) {
+        if (!Double.isFinite(cost) || cost < 0) return;
+        this.visitCost = cost;
+    }
     public String getPermission() { return permission; }
     public void setPermission(String permission) { this.permission = permission; }
 }

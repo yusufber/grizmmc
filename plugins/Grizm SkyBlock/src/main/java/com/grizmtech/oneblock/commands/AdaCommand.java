@@ -253,6 +253,10 @@ public class AdaCommand implements CommandExecutor, TabCompleter {
                     }
                     @SuppressWarnings("deprecation")
                     OfflinePlayer targetLike = Bukkit.getOfflinePlayer(args[1]);
+                    if (!plugin.getDataManager().hasIsland(targetLike.getUniqueId())) {
+                        player.sendMessage(Component.text("Belirtilen oyuncunun henüz bir adası bulunmuyor!").color(NamedTextColor.RED));
+                        return true;
+                    }
                     plugin.getIslandSocialManager().likeIsland(player, targetLike.getUniqueId());
                     return true;
 
@@ -266,6 +270,10 @@ public class AdaCommand implements CommandExecutor, TabCompleter {
                         double amount = Double.parseDouble(args[2]);
                         @SuppressWarnings("deprecation")
                         OfflinePlayer targetTip = Bukkit.getOfflinePlayer(args[1]);
+                        if (!plugin.getDataManager().hasIsland(targetTip.getUniqueId())) {
+                            player.sendMessage(Component.text("Belirtilen oyuncunun henüz bir adası bulunmuyor!").color(NamedTextColor.RED));
+                            return true;
+                        }
                         plugin.getIslandSocialManager().tipOwner(player, targetTip.getUniqueId(), amount);
                     } catch (NumberFormatException e) {
                         player.sendMessage(Component.text("Geçersiz miktar!").color(NamedTextColor.RED));
@@ -281,6 +289,10 @@ public class AdaCommand implements CommandExecutor, TabCompleter {
                     }
                     @SuppressWarnings("deprecation")
                     OfflinePlayer targetMsg = Bukkit.getOfflinePlayer(args[1]);
+                    if (!plugin.getDataManager().hasIsland(targetMsg.getUniqueId())) {
+                        player.sendMessage(Component.text("Belirtilen oyuncunun henüz bir adası bulunmuyor!").color(NamedTextColor.RED));
+                        return true;
+                    }
                     StringBuilder msgBuilder = new StringBuilder();
                     for (int i = 2; i < args.length; i++) {
                         msgBuilder.append(args[i]).append(" ");

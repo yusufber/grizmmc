@@ -47,6 +47,10 @@ public class WebSyncService {
     private final HttpClient httpClient;
     private final NamespacedKey fireworkKey;
 
+    private static final List<String> ALLOWED_DELIVERY_PREFIXES = List.of(
+            "anahtarver ", "kasa givekey ", "eco give ", "give ", "gperm user ", "lp user ", "crates "
+    );
+
     private final Set<String> celebratedIds = ConcurrentHashMap.newKeySet();
     private final Set<String> executedDeliveryServerKeys = ConcurrentHashMap.newKeySet();
 
@@ -57,7 +61,7 @@ public class WebSyncService {
         int timeoutSec = Math.max(2, plugin.getConfig().getInt("sync.timeout-seconds", 5));
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(timeoutSec))
-                .followRedirects(HttpClient.Redirect.NORMAL)
+                .followRedirects(HttpClient.Redirect.NEVER)
                 .build();
     }
 
@@ -281,7 +285,12 @@ public class WebSyncService {
 
     public void processDeliveriesForPlayer(Player player) {
         if (player == null || !player.isOnline()) return;
-        UserData user = manager.getUserData(player.getName());
+        String playerName = player.getName();
+        if (playerName == null || !playerName.matches("^[A-Za-z0-9_]{3,16}$")) {
+            plugin.getLogger().warning("[GrizmPerms] Gecersiz oyuncu adi nedeniyle teslimat reddedildi: " + playerName);
+            return;
+        }
+        UserData user = manager.getUserData(playerName);
         if (user == null || user.getPendingDeliveries().isEmpty()) return;
 
         String srvId = manager.getServerId();
@@ -331,9 +340,25 @@ public class WebSyncService {
                     }
 
                     if (shouldRun && !rc.getCommand().isEmpty()) {
-                        String finalCmd = rc.getCommand().replace("{player}", player.getName());
+                        String finalCmd = rc.getCommand().replace("{player}", playerName).trim();
                         if (finalCmd.startsWith("/")) {
-                            finalCmd = finalCmd.substring(1);
+                            finalCmd = finalCmd.substring(1).trim();
+                        }
+                        if (finalCmd.contains("\r") || finalCmd.contains("\n") || finalCmd.contains(";")) {
+                            plugin.getLogger().warning("[GrizmPerms] Tehlikeli karakter iceren teslimat komutu engellendi: " + finalCmd);
+                            continue;
+                        }
+                        String lowerCmd = finalCmd.toLowerCase(Locale.ROOT);
+                        boolean allowedPrefix = false;
+                        for (String prefix : ALLOWED_DELIVERY_PREFIXES) {
+                            if (lowerCmd.startsWith(prefix)) {
+                                allowedPrefix = true;
+                                break;
+                            }
+                        }
+                        if (!allowedPrefix) {
+                            plugin.getLogger().warning("[GrizmPerms] Izin verilmeyen teslimat komutu engellendi: " + finalCmd);
+                            continue;
                         }
                         try {
                             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), finalCmd);

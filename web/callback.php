@@ -13,8 +13,17 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'auth_denied') {
     exit;
 }
 
-// Kod parametresi kontrolü
+// Kod ve OAuth State parametresi kontrolü
 $code = $_GET['code'] ?? '';
+$state = $_GET['state'] ?? '';
+
+if (empty($_SESSION['oauth_state']) || empty($state) || !hash_equals($_SESSION['oauth_state'], $state)) {
+    unset($_SESSION['oauth_state']);
+    $_SESSION['flash_error'] = 'Güvenlik doğrulaması başarısız (OAuth state uyuşmazlığı). Lütfen tekrar giriş yapın.';
+    header('Location: index.php');
+    exit;
+}
+unset($_SESSION['oauth_state']);
 
 if (empty($code)) {
     $_SESSION['flash_error'] = 'Yetkilendirme kodu bulunamadı. Lütfen tekrar giriş yapın.';
@@ -39,7 +48,8 @@ if (function_exists('curl_init')) {
     curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postFields));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
     $response = curl_exec($ch);
     curl_close($ch);
 } else {

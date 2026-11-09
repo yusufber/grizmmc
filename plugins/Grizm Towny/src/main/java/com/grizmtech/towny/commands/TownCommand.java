@@ -195,6 +195,10 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         }
         try {
             double amount = Double.parseDouble(args[1]);
+            if (!Double.isFinite(amount) || amount <= 0) {
+                MessageUtil.sendMessage(player, "<red>Geçersiz miktar!</red>");
+                return;
+            }
             Town town = townManager.getTownByPlayer(player.getUniqueId());
             if (town != null) {
                 townManager.deposit(town, player, amount);
@@ -211,6 +215,10 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         }
         try {
             double amount = Double.parseDouble(args[1]);
+            if (!Double.isFinite(amount) || amount <= 0) {
+                MessageUtil.sendMessage(player, "<red>Geçersiz miktar!</red>");
+                return;
+            }
             Town town = townManager.getTownByPlayer(player.getUniqueId());
             if (town != null) {
                 townManager.withdraw(town, player, amount);
@@ -267,6 +275,10 @@ public class TownCommand implements CommandExecutor, TabCompleter {
 
         try {
             double cost = Double.parseDouble(args[1]);
+            if (!Double.isFinite(cost) || cost < 0) {
+                MessageUtil.sendMessage(player, "<red>Geçersiz miktar!</red>");
+                return;
+            }
             town.setSpawnCost(cost);
             databaseManager.saveTownAsync(town);
             MessageUtil.sendMessage(player, "<green>Dışarıdan gelen ziyaretçiler için giriş vergisi güncellendi: <yellow>" + cost + "$</yellow></green>");
@@ -292,7 +304,31 @@ public class TownCommand implements CommandExecutor, TabCompleter {
         Town town = townManager.getTownByPlayer(player.getUniqueId());
         if (town == null) return;
 
-        double cost = args.length >= 3 ? Double.parseDouble(args[2]) : 0.0;
+        TownMember member = townManager.getMember(player.getUniqueId());
+        if (member == null || !member.getRole().canSetSpawn()) {
+            MessageUtil.sendMessage(player, "<red>Kasaba warpı oluşturma yetkiniz yok!</red>");
+            return;
+        }
+
+        ClaimChunk claim = claimManager.getClaim(player.getLocation());
+        if (claim == null || !claim.getTownUuid().equals(town.getUuid())) {
+            MessageUtil.sendMessage(player, "<red>Kasaba warpı sadece kasabanızın sınırları içine yerleştirilebilir!</red>");
+            return;
+        }
+
+        double cost = 0.0;
+        if (args.length >= 3) {
+            try {
+                cost = Double.parseDouble(args[2]);
+            } catch (NumberFormatException e) {
+                MessageUtil.sendMessage(player, "<red>Geçersiz miktar!</red>");
+                return;
+            }
+        }
+        if (!Double.isFinite(cost) || cost < 0) {
+            MessageUtil.sendMessage(player, "<red>Geçersiz miktar!</red>");
+            return;
+        }
         warpManager.setTownWarp(player, town, args[1], cost);
     }
 

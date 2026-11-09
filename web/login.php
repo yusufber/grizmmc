@@ -30,6 +30,7 @@ if (is_logged_in()) {
     exit;
 }
 
-// GrizmID Authorize sayfasına yönlendir
-header('Location: ' . get_auth_login_url());
+// GrizmID Authorize sayfasına OAuth state parametresi ile yönlendir
+$_SESSION['oauth_state'] = bin2hex(random_bytes(16));
+header('Location: ' . get_oauth_login_url());
 exit;

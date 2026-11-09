@@ -29,6 +29,10 @@ $activePage = $activePage ?? 'home';
 
   <!-- Özel Monokrom CSS -->
   <link rel="stylesheet" href="assets/css/style.css">
+
+  <!-- CSRF Güvenlik Anahtarı -->
+  <meta name="csrf-token" content="<?php echo htmlspecialchars(get_csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
+  <script>window.GRIZM_CSRF_TOKEN = <?php echo json_encode(get_csrf_token()); ?>;</script>
 </head>
 <body>
   <!-- İnteraktif Arka Plan Kanvası -->

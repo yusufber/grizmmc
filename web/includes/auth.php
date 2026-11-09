@@ -14,14 +14,6 @@ if (!defined('ADMIN_USERNAMES')) {
     define('ADMIN_USERNAMES', ['Grizm', 'Admin', 'Kurucu', 'GrizmMC']);
 }
 
-// Test ve önizleme için yetkili modu geçişi
-if (isset($_GET['toggle_staff']) && is_logged_in()) {
-    $_SESSION['staff_mode_override'] = empty($_SESSION['staff_mode_override']);
-    $cleanUrl = strtok($_SERVER['REQUEST_URI'] ?? '', '?');
-    header('Location: ' . ($cleanUrl ?: 'index.php'));
-    exit;
-}
-
 // ============================================================================
 // TEMEL OTURUM VE KULLANICI FONKSİYONLARI
 // ============================================================================
@@ -40,16 +32,20 @@ function get_auth_username() {
     return !empty($user['minecraft_username']) ? $user['minecraft_username'] : ($user['full_name'] ?? null);
 }
 
+function get_oauth_login_url() {
+    if (empty($_SESSION['oauth_state'])) {
+        $_SESSION['oauth_state'] = bin2hex(random_bytes(16));
+    }
+    return rtrim(AUTH_SERVER_URL, '/') . '/authorize?api_key=' . urlencode(AUTH_CLIENT_ID) . '&state=' . urlencode($_SESSION['oauth_state']);
+}
+
 function get_auth_login_url() {
-    return 'https://auth.dlmtd.com/authorize?api_key=' . urlencode(AUTH_CLIENT_ID);
+    return get_oauth_login_url();
 }
 
 function is_staff_user() {
     if (!is_logged_in()) {
         return false;
-    }
-    if (!empty($_SESSION['staff_mode_override'])) {
-        return true;
     }
     $user = get_auth_user();
     $email = strtolower(trim($user['email'] ?? ''));

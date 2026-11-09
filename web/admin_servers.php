@@ -17,7 +17,7 @@ $pageTitle = "Sunucu Kontrol Merkezi";
 $activePage = "admin_servers";
 $servers = ServerManager::getServers();
 $isUnlocked = !empty($_SESSION['server_panel_unlocked']);
-$systemInfo = ServerManager::getSystemResources();
+$systemInfo = $isUnlocked ? ServerManager::getSystemResources() : ['cpu_usage' => 'Kilitli', 'ram_usage' => 'Kilitli'];
 
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/navbar.php';
@@ -113,12 +113,12 @@ require_once __DIR__ . '/includes/navbar.php';
           </div>
           <div id="pinErrorMsg" class="pin-error-msg"></div>
         </form>
-        <span class="pin-hint"><i class="fa-solid fa-info-circle"></i> Varsayılan PIN: <code>Grizm2026!</code> (config.php içerisinden değiştirilebilir)</span>
       </div>
     </div>
 
     <!-- Panel Ana Gövdesi (Kilit Açılınca Kullanılabilir) -->
     <div id="adminPanelContent" class="<?php echo !$isUnlocked ? 'blurred-content' : ''; ?>">
+      <?php if ($isUnlocked): ?>
       
       <!-- Sunucular Listesi / Kartlar -->
       <div class="section-heading-sm">
@@ -237,6 +237,7 @@ require_once __DIR__ . '/includes/navbar.php';
         </form>
       </div>
 
+      <?php endif; ?>
     </div>
   </div>
 </main>
@@ -932,18 +933,17 @@ async function handlePinSubmit(e) {
   try {
     const formData = new FormData();
     formData.append('pin', pinInput.value);
+    formData.append('csrf_token', window.GRIZM_CSRF_TOKEN || '');
 
     const res = await fetch('api/server_control.php?action=verify_pin', {
       method: 'POST',
+      headers: { 'X-CSRF-Token': window.GRIZM_CSRF_TOKEN || '' },
       body: formData
     });
     const data = await res.json();
 
     if (data.success) {
       isPanelUnlocked = true;
-      document.getElementById('pinLockOverlay').classList.add('hidden');
-      document.getElementById('adminPanelContent').classList.remove('blurred-content');
-      initServerManagement();
       location.reload();
     } else {
       errorMsg.textContent = data.message || 'Geçersiz PIN!';
@@ -961,7 +961,10 @@ async function handlePinSubmit(e) {
 // Paneli Kilitle
 document.getElementById('btnLockPanel')?.addEventListener('click', async () => {
   if (confirm('Paneli kilitlemek istediğinize emin misiniz?')) {
-    await fetch('api/server_control.php?action=lock_panel');
+    await fetch('api/server_control.php?action=lock_panel', {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': window.GRIZM_CSRF_TOKEN || '' }
+    });
     location.reload();
   }
 });
@@ -1044,7 +1047,10 @@ async function controlServer(action, key) {
   appendTerminalLine(`[SİSTEM] ${key.toUpperCase()} için '${action}' emri verildi...`, 'system-line');
 
   try {
-    const res = await fetch(`api/server_control.php?action=${action}&server=${key}`);
+    const res = await fetch(`api/server_control.php?action=${action}&server=${key}`, {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': window.GRIZM_CSRF_TOKEN || '' }
+    });
     const json = await res.json();
 
     if (json.success) {
@@ -1066,7 +1072,10 @@ async function triggerGlobalAction(action, confirmMsg) {
   appendTerminalLine(`[TOPLU İŞLEM] ${action.toUpperCase()} yürütülüyor...`, 'system-line');
 
   try {
-    const res = await fetch(`api/server_control.php?action=${action}`);
+    const res = await fetch(`api/server_control.php?action=${action}`, {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': window.GRIZM_CSRF_TOKEN || '' }
+    });
     const json = await res.json();
 
     if (json.success) {
@@ -1144,9 +1153,11 @@ async function handleCommandSubmit(e) {
   try {
     const fd = new FormData();
     fd.append('cmd', cmd);
+    fd.append('csrf_token', window.GRIZM_CSRF_TOKEN || '');
 
     const res = await fetch(`api/server_control.php?action=command&server=${currentActiveServer}`, {
       method: 'POST',
+      headers: { 'X-CSRF-Token': window.GRIZM_CSRF_TOKEN || '' },
       body: fd
     });
     const json = await res.json();

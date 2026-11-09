@@ -3,6 +3,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  initCsrfProtection();
   initParticleBackground();
   initCopyIpHandlers();
   initServerStatusPolling();
@@ -10,6 +11,34 @@ document.addEventListener('DOMContentLoaded', () => {
   initStoreModal();
   initCouponRedeemer();
 });
+
+function getCsrfToken() {
+  return window.GRIZM_CSRF_TOKEN || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+}
+
+function initCsrfProtection() {
+  const token = getCsrfToken();
+  if (!token) return;
+  document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(form => {
+    if (!form.querySelector('input[name="csrf_token"]')) {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'csrf_token';
+      input.value = token;
+      form.appendChild(input);
+    }
+  });
+}
+
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, s => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[s]));
+}
 
 /* ==========================================================================
    1. CLIPBOARD IP KOPYALAMA & SESLİ/TOAST BİLDİRİM
@@ -76,7 +105,7 @@ function showToast(message) {
 
   const toast = document.createElement('div');
   toast.className = 'toast';
-  toast.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>${message}</span>`;
+  toast.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>${escapeHtml(message)}</span>`;
   container.appendChild(toast);
 
   setTimeout(() => {
@@ -335,7 +364,10 @@ function initStoreModal() {
       try {
         const res = await fetch('api/perms.php?action=buy_vip', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': getCsrfToken()
+          },
           body: JSON.stringify({
             role_id: roleId,
             target_username: targetUsername
@@ -353,7 +385,7 @@ function initStoreModal() {
             feedbackMsg.style.background = 'rgba(255, 255, 255, 0.08)';
             feedbackMsg.style.border = '1px solid rgba(255, 255, 255, 0.35)';
             feedbackMsg.style.color = '#ffffff';
-            feedbackMsg.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>${data.message}</strong>`;
+            feedbackMsg.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>${escapeHtml(data.message)}</strong>`;
           }
 
           showToast(data.message);
@@ -366,7 +398,7 @@ function initStoreModal() {
             feedbackMsg.style.background = 'rgba(255, 85, 85, 0.1)';
             feedbackMsg.style.border = '1px solid rgba(255, 85, 85, 0.4)';
             feedbackMsg.style.color = '#fca5a5';
-            feedbackMsg.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${data.message || 'İşlem sırasında bir hata oluştu.'}`;
+            feedbackMsg.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${escapeHtml(data.message || 'İşlem sırasında bir hata oluştu.')}`;
           }
           if (submitBtn) {
             submitBtn.disabled = false;
@@ -410,7 +442,10 @@ function initCouponRedeemer() {
     try {
       const res = await fetch('api/perms.php?action=redeem_coupon', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': getCsrfToken()
+        },
         body: JSON.stringify({ code })
       });
       const data = await res.json();

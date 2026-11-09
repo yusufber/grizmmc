@@ -3,6 +3,7 @@ package com.grizmtech.towny.commands;
 import com.grizmtech.towny.core.MessageUtil;
 import com.grizmtech.towny.town.Town;
 import com.grizmtech.towny.town.TownManager;
+import com.grizmtech.towny.town.TownMember;
 import com.grizmtech.towny.war.SiegeWar;
 import com.grizmtech.towny.war.WarManager;
 import org.bukkit.command.Command;
@@ -125,12 +126,32 @@ public class WarCommand implements CommandExecutor, TabCompleter {
     }
 
     private void handleBanner(Player player) {
+        handleGiveBanner(player);
+    }
+
+    private void handleGiveBanner(Player player) {
         Town town = townManager.getTownByPlayer(player.getUniqueId());
         if (town == null) return;
+
+        TownMember member = townManager.getMember(player.getUniqueId());
+        if (member == null || !member.getTownUuid().equals(town.getUuid()) || !member.getRole().canDeclareWar()) {
+            MessageUtil.sendMessage(player, "<red>Kuşatma sancağı alma yetkiniz yok!</red>");
+            return;
+        }
 
         SiegeWar war = warManager.getWarByTown(town.getUuid());
         if (war == null || !war.getAttackerTownUuid().equals(town.getUuid())) {
             MessageUtil.sendMessage(player, "<red>Aktif bir saldırı savaşınız yok!</red>");
+            return;
+        }
+
+        if (war.getBannerLocation() != null) {
+            MessageUtil.sendMessage(player, "<red>Kuşatma sancağı zaten dikilmiş durumda!</red>");
+            return;
+        }
+
+        if (!warManager.isPrimeTime()) {
+            MessageUtil.sendMessage(player, "<red>Kuşatma sancağı yalnızca Prime-Time saatlerinde alınabilir!</red>");
             return;
         }
 

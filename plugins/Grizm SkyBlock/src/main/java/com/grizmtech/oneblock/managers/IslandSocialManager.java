@@ -174,7 +174,7 @@ public class IslandSocialManager {
             return false;
         }
 
-        if (amount <= 0 || !plugin.getEconomyManager().hasMoney(visitor, amount)) {
+        if (!Double.isFinite(amount) || amount <= 0 || !plugin.getEconomyManager().hasMoney(visitor, amount)) {
             visitor.sendMessage(Component.text("Yetersiz bakiye!").color(NamedTextColor.RED));
             return false;
         }

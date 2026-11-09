@@ -9,22 +9,41 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionManager {
 
+    private static final long PRE_AUTH_EXPIRY_MS = 15_000L;
+
+    private static class CachedPreAuth {
+        final UserProfileData profile;
+        final long timestamp;
+
+        CachedPreAuth(UserProfileData profile, long timestamp) {
+            this.profile = profile;
+            this.timestamp = timestamp;
+        }
+    }
+
     private final Map<UUID, UserProfileData> authenticatedPlayers = new ConcurrentHashMap<>();
-    private final Map<String, UserProfileData> preAuthenticatedProfiles = new ConcurrentHashMap<>();
+    private final Map<String, CachedPreAuth> preAuthenticatedProfiles = new ConcurrentHashMap<>();
     private final Map<UUID, Long> pendingLoginTimers = new ConcurrentHashMap<>();
 
     /**
      * AsyncPreLogin sırasında başarıyla doğrulanan profili geçici olarak saklar.
      */
     public void cachePreAuth(String username, UserProfileData profile) {
-        preAuthenticatedProfiles.put(username.toLowerCase(), profile);
+        preAuthenticatedProfiles.put(username.toLowerCase(), new CachedPreAuth(profile, System.currentTimeMillis()));
     }
 
     /**
      * Oyuncu oyuna girdiğinde (PlayerJoinEvent) önceden doğrulanan profili alır.
      */
     public UserProfileData claimPreAuth(String username) {
-        return preAuthenticatedProfiles.remove(username.toLowerCase());
+        CachedPreAuth cached = preAuthenticatedProfiles.remove(username.toLowerCase());
+        if (cached == null) {
+            return null;
+        }
+        if (System.currentTimeMillis() - cached.timestamp > PRE_AUTH_EXPIRY_MS) {
+            return null;
+        }
+        return cached.profile;
     }
 
     /**

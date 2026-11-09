@@ -283,7 +283,7 @@ public class TownManager {
     }
 
     public boolean deposit(Town town, Player player, double amount) {
-        if (amount <= 0) return false;
+        if (!Double.isFinite(amount) || amount <= 0) return false;
         if (!vaultHook.takeMoney(player, amount)) {
             MessageUtil.sendMessage(player, "<red>Yeterli paranız bulunmuyor!");
             return false;
@@ -302,7 +302,7 @@ public class TownManager {
     }
 
     public boolean withdraw(Town town, Player player, double amount) {
-        if (amount <= 0) return false;
+        if (!Double.isFinite(amount) || amount <= 0) return false;
         TownMember member = getMember(player.getUniqueId());
         if (member == null || !member.getRole().canWithdraw()) {
             MessageUtil.sendMessage(player, "<red>Kasaba bankasından para çekme yetkiniz yok!");

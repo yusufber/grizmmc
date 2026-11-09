@@ -24,9 +24,10 @@ if (!is_staff_user()) {
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 if ($action === 'verify_pin') {
+    verify_csrf_token();
     $pin = trim($_POST['pin'] ?? '');
     $correctPin = defined('ADMIN_PANEL_PIN') ? ADMIN_PANEL_PIN : 'Grizm2026!';
-    if ($pin === $correctPin) {
+    if (hash_equals($correctPin, $pin)) {
         $_SESSION['server_panel_unlocked'] = true;
         echo json_encode([
             'success' => true,
@@ -55,6 +56,7 @@ if (empty($_SESSION['server_panel_unlocked'])) {
 
 // Paneli Yeniden Kilitleme
 if ($action === 'lock_panel') {
+    verify_csrf_token();
     unset($_SESSION['server_panel_unlocked']);
     echo json_encode(['success' => true, 'message' => 'Panel kilitlendi.'], JSON_UNESCAPED_UNICODE);
     exit;
@@ -70,26 +72,31 @@ switch ($action) {
         break;
 
     case 'start':
+        verify_csrf_token();
         $res = ServerManager::startServer($serverKey);
         echo json_encode($res, JSON_UNESCAPED_UNICODE);
         break;
 
     case 'stop':
+        verify_csrf_token();
         $res = ServerManager::stopServer($serverKey);
         echo json_encode($res, JSON_UNESCAPED_UNICODE);
         break;
 
     case 'restart':
+        verify_csrf_token();
         $res = ServerManager::restartServer($serverKey);
         echo json_encode($res, JSON_UNESCAPED_UNICODE);
         break;
 
     case 'start_all':
+        verify_csrf_token();
         $res = ServerManager::startAll();
         echo json_encode($res, JSON_UNESCAPED_UNICODE);
         break;
 
     case 'stop_all':
+        verify_csrf_token();
         $res = ServerManager::stopAll();
         echo json_encode($res, JSON_UNESCAPED_UNICODE);
         break;
@@ -101,6 +108,7 @@ switch ($action) {
         break;
 
     case 'command':
+        verify_csrf_token();
         $command = $_POST['cmd'] ?? '';
         $res = ServerManager::sendCommand($serverKey, $command);
         echo json_encode($res, JSON_UNESCAPED_UNICODE);

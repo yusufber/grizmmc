@@ -29,12 +29,6 @@ public class PreLoginListener implements Listener {
         String username = event.getName();
         String ip = event.getAddress().getHostAddress();
 
-        // Whitelist / Bypass kontrolü
-        if (settings.whitelistBypass.contains(username.toLowerCase())) {
-            plugin.getLogger().info("[GrizmAuth] Bypass listesindeki yetkili dogrulandi: " + username);
-            return;
-        }
-
         try {
             // Web API sorgusunu asenkron olarak tamamla (AsyncPreLogin thread'i bloklanabilir)
             AuthVerifyResult result = apiClient.verifyPlayerJoinAsync(username, ip).join();

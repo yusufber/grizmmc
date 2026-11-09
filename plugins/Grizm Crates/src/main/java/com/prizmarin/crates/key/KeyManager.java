@@ -48,7 +48,8 @@ public class KeyManager {
             loreStrings = tierSec.getStringList("key-lore");
         }
 
-        ItemStack item = new ItemStack(mat, Math.max(1, amount));
+        int safeAmount = Math.min(640, Math.max(1, amount));
+        ItemStack item = new ItemStack(mat, safeAmount);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.displayName(miniMessage.deserialize(nameStr));
@@ -103,7 +104,8 @@ public class KeyManager {
     }
 
     public void giveKey(Player player, CrateTier tier, int amount) {
-        ItemStack keyItem = createKey(tier, amount);
+        int safeAmount = Math.min(640, Math.max(1, amount));
+        ItemStack keyItem = createKey(tier, safeAmount);
         var leftovers = player.getInventory().addItem(keyItem);
         for (ItemStack leftover : leftovers.values()) {
             player.getWorld().dropItemNaturally(player.getLocation(), leftover);

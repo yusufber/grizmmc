@@ -5,7 +5,7 @@
  */
 
 if (!defined('PAYMENT_WEBHOOK_SECRET')) {
-    define('PAYMENT_WEBHOOK_SECRET', 'grizm_pay_whsec_8842a9f1c3e7');
+    define('PAYMENT_WEBHOOK_SECRET', getenv('PAYMENT_WEBHOOK_SECRET') ?: 'grizm_pay_whsec_8842a9f1c3e7');
 }
 
 // ============================================================================
@@ -103,9 +103,45 @@ function gperm_data_dir() {
     }
     $htaccess = $dir . '/.htaccess';
     if (!file_exists($htaccess)) {
-        @file_put_contents($htaccess, "Deny from all\n");
+        @file_put_contents($htaccess, "<IfModule mod_authz_core.c>\n    Require all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n    Order allow,deny\n    Deny from all\n</IfModule>\n");
+    }
+    $indexFile = $dir . '/index.php';
+    if (!file_exists($indexFile)) {
+        @file_put_contents($indexFile, "<?php http_response_code(403); exit;\n");
     }
     return $dir;
+}
+
+function gperm_with_lock(callable $fn) {
+    static $lockFp = null;
+    static $lockDepth = 0;
+
+    if ($lockDepth > 0 && $lockFp !== null) {
+        $lockDepth++;
+        try {
+            return $fn();
+        } finally {
+            $lockDepth--;
+        }
+    }
+
+    $lockFile = gperm_data_dir() . '/.gperm.lock';
+    $fp = @fopen($lockFile, 'c+');
+    if ($fp === false) {
+        return $fn();
+    }
+
+    @flock($fp, LOCK_EX);
+    $lockFp = $fp;
+    $lockDepth = 1;
+    try {
+        return $fn();
+    } finally {
+        $lockDepth = 0;
+        $lockFp = null;
+        @flock($fp, LOCK_UN);
+        @fclose($fp);
+    }
 }
 
 function gperm_read_json($filename, $default = []) {
@@ -840,7 +876,7 @@ function gperm_save_role($roleData) {
 
     $roles[$id] = [
         'id' => $id,
-        'name' => trim($roleData['name'] ?? ($existing['name'] ?? strtoupper($id))),
+        'name' => trim(strip_tags(strval($roleData['name'] ?? ($existing['name'] ?? strtoupper($id))))),
         'weight' => intval($roleData['weight'] ?? ($existing['weight'] ?? 10)),
         'prefix' => strval($roleData['prefix'] ?? ($existing['prefix'] ?? '')),
         'suffix' => strval($roleData['suffix'] ?? ($existing['suffix'] ?? '')),
@@ -848,10 +884,10 @@ function gperm_save_role($roleData) {
         'badge_color' => strval($roleData['badge_color'] ?? ($existing['badge_color'] ?? '#ffffff')),
         'is_default' => $isDefault || (!empty($existing['is_default']) && !isset($roleData['is_default'])),
         'is_vip' => isset($roleData['is_vip']) ? (bool)$roleData['is_vip'] : (bool)($existing['is_vip'] ?? false),
-        'vip_tier' => trim($roleData['vip_tier'] ?? ($existing['vip_tier'] ?? '')),
+        'vip_tier' => trim(strip_tags(strval($roleData['vip_tier'] ?? ($existing['vip_tier'] ?? '')))),
         'vip_price' => floatval($roleData['vip_price'] ?? ($existing['vip_price'] ?? 0)),
         'vip_duration_days' => intval($roleData['vip_duration_days'] ?? ($existing['vip_duration_days'] ?? 30)),
-        'vip_badge' => trim($roleData['vip_badge'] ?? ($existing['vip_badge'] ?? 'VIP')),
+        'vip_badge' => trim(strip_tags(strval($roleData['vip_badge'] ?? ($existing['vip_badge'] ?? 'VIP')))),
         'vip_highlight' => isset($roleData['vip_highlight']) ? (bool)$roleData['vip_highlight'] : (bool)($existing['vip_highlight'] ?? false),
         'vip_perks' => $vipPerks,
         'vip_reward_commands' => $rewardCommands,
@@ -1025,8 +1061,9 @@ function gperm_get_user($username) {
 }
 
 function gperm_save_user_record($username, $record, $reason = 'user_update', $notifyServers = true) {
-    $uKey = strtolower(trim($username));
-    if ($uKey === '') return false;
+    $cleanName = trim($username);
+    $uKey = strtolower($cleanName);
+    if ($uKey === '' || !preg_match('/^[a-zA-Z0-9_]{3,16}$/', $cleanName)) return false;
 
     $users = gperm_get_all_user_perms(false);
     $record['username'] = $record['username'] ?? trim($username);
@@ -1360,63 +1397,65 @@ function gperm_get_user_orders($username) {
 }
 
 function gperm_purchase_vip_with_wallet($username, $roleId) {
-    $role = gperm_get_role($roleId);
-    if (!$role || empty($role['is_vip'])) {
-        return ['success' => false, 'message' => 'Geçerli bir VIP paketi seçilmedi.'];
-    }
+    return gperm_with_lock(function () use ($username, $roleId) {
+        $role = gperm_get_role($roleId);
+        if (!$role || empty($role['is_vip'])) {
+            return ['success' => false, 'message' => 'Geçerli bir VIP paketi seçilmedi.'];
+        }
 
-    $price = round(floatval($role['vip_price'] ?? 0), 2);
-    $days = intval($role['vip_duration_days'] ?? 30);
-    if ($price <= 0) {
-        return ['success' => false, 'message' => 'Bu paket şu anda mağaza satışına kapalıdır.'];
-    }
+        $price = round(floatval($role['vip_price'] ?? 0), 2);
+        $days = intval($role['vip_duration_days'] ?? 30);
+        if ($price <= 0) {
+            return ['success' => false, 'message' => 'Bu paket şu anda mağaza satışına kapalıdır.'];
+        }
 
-    $user = gperm_get_user($username);
-    $currentCredits = round(floatval($user['credits'] ?? 0), 2);
+        $user = gperm_get_user($username);
+        $currentCredits = round(floatval($user['credits'] ?? 0), 2);
 
-    if ($currentCredits < $price) {
-        $missing = number_format($price - $currentCredits, 2, '.', '');
+        if ($currentCredits < $price) {
+            $missing = number_format($price - $currentCredits, 2, '.', '');
+            return [
+                'success' => false,
+                'code' => 'insufficient_balance',
+                'credits' => $currentCredits,
+                'required' => $price,
+                'message' => "Yetersiz bakiye! Mevcut bakiyeniz: {$currentCredits} ₺ (Eksik: {$missing} ₺). Hediye/Bakiye kodu kullanabilir veya bakiye yükleyebilirsiniz."
+            ];
+        }
+
+        $user['credits'] = round($currentCredits - $price, 2);
+        gperm_save_user_record($username, $user, "wallet_debit:$username:$price", false);
+
+        $grant = gperm_grant_user_role($username, $role['id'], $days, 'web_store', true);
+        if (!$grant['success']) {
+            gperm_adjust_user_credits($username, $price, 'wallet_refund');
+            return $grant;
+        }
+
+        $order = gperm_log_order([
+            'username' => $user['username'],
+            'email' => $user['email'] ?? '',
+            'type' => 'vip_purchase',
+            'role_id' => $role['id'],
+            'role_name' => $role['name'],
+            'amount' => $price,
+            'duration_days' => $days,
+            'provider' => 'wallet',
+            'note' => $grant['extended'] ? "{$days} gün süre uzatıldı" : "{$days} gün yeni VIP tanımlandı"
+        ]);
+
+        $updatedUser = gperm_get_user($username);
+
         return [
-            'success' => false,
-            'code' => 'insufficient_balance',
-            'credits' => $currentCredits,
-            'required' => $price,
-            'message' => "Yetersiz bakiye! Mevcut bakiyeniz: {$currentCredits} ₺ (Eksik: {$missing} ₺). Hediye/Bakiye kodu kullanabilir veya bakiye yükleyebilirsiniz."
+            'success' => true,
+            'message' => "{$role['name']} paketiniz başarıyla hesabınıza tanımlandı! Oyun içinde otomatik aktif edildi.",
+            'order' => $order,
+            'credits' => $updatedUser['credits'],
+            'expires_at' => $grant['expires_at'],
+            'extended' => $grant['extended'],
+            'role' => $role
         ];
-    }
-
-    $user['credits'] = round($currentCredits - $price, 2);
-    gperm_save_user_record($username, $user, "wallet_debit:$username:$price", false);
-
-    $grant = gperm_grant_user_role($username, $role['id'], $days, 'web_store', true);
-    if (!$grant['success']) {
-        gperm_adjust_user_credits($username, $price, 'wallet_refund');
-        return $grant;
-    }
-
-    $order = gperm_log_order([
-        'username' => $user['username'],
-        'email' => $user['email'] ?? '',
-        'type' => 'vip_purchase',
-        'role_id' => $role['id'],
-        'role_name' => $role['name'],
-        'amount' => $price,
-        'duration_days' => $days,
-        'provider' => 'wallet',
-        'note' => $grant['extended'] ? "{$days} gün süre uzatıldı" : "{$days} gün yeni VIP tanımlandı"
-    ]);
-
-    $updatedUser = gperm_get_user($username);
-
-    return [
-        'success' => true,
-        'message' => "{$role['name']} paketiniz başarıyla hesabınıza tanımlandı! Oyun içinde otomatik aktif edildi.",
-        'order' => $order,
-        'credits' => $updatedUser['credits'],
-        'expires_at' => $grant['expires_at'],
-        'extended' => $grant['extended'],
-        'role' => $role
-    ];
+    });
 }
 
 /**
@@ -1484,91 +1523,93 @@ function gperm_enqueue_delivery($username, $command, $targetServer = 'first', $l
  * @return array
  */
 function gperm_purchase_crate_keys_with_wallet($buyerUsername, $targetUsername, $tier, $amount = 1) {
-    $tier = strtolower(trim($tier));
-    $catalogItem = gperm_get_crate_key($tier);
-    if (!$catalogItem) {
-        return ['success' => false, 'message' => 'Geçersiz kasa kademesi seçildi.'];
-    }
+    return gperm_with_lock(function () use ($buyerUsername, $targetUsername, $tier, $amount) {
+        $tier = strtolower(trim($tier));
+        $catalogItem = gperm_get_crate_key($tier);
+        if (!$catalogItem) {
+            return ['success' => false, 'message' => 'Geçersiz kasa kademesi seçildi.'];
+        }
 
-    $amount = max(1, intval($amount));
-    $price = gperm_calculate_crate_key_price($tier, $amount);
-    if ($price === null || $price <= 0) {
-        return ['success' => false, 'message' => 'Fiyat hesaplanamadı veya ürün satışa kapalı.'];
-    }
+        $amount = max(1, intval($amount));
+        $price = gperm_calculate_crate_key_price($tier, $amount);
+        if ($price === null || $price <= 0) {
+            return ['success' => false, 'message' => 'Fiyat hesaplanamadı veya ürün satışa kapalı.'];
+        }
 
-    $buyer = gperm_get_user($buyerUsername);
-    if (!$buyer) {
-        return ['success' => false, 'message' => 'Kullanıcı hesabı bulunamadı.'];
-    }
+        $buyer = gperm_get_user($buyerUsername);
+        if (!$buyer) {
+            return ['success' => false, 'message' => 'Kullanıcı hesabı bulunamadı.'];
+        }
 
-    $currentCredits = round(floatval($buyer['credits'] ?? 0), 2);
-    if ($currentCredits < $price) {
-        $missing = number_format($price - $currentCredits, 2, '.', '');
+        $currentCredits = round(floatval($buyer['credits'] ?? 0), 2);
+        if ($currentCredits < $price) {
+            $missing = number_format($price - $currentCredits, 2, '.', '');
+            return [
+                'success' => false,
+                'code' => 'insufficient_balance',
+                'credits' => $currentCredits,
+                'required' => $price,
+                'message' => "Yetersiz bakiye! Mevcut bakiyeniz: {$currentCredits} ₺ (Gereken: {$price} ₺, Eksik: {$missing} ₺). Cüzdanınıza bakiye yükleyerek hemen alabilirsiniz."
+            ];
+        }
+
+        $cleanTarget = trim($targetUsername !== '' ? $targetUsername : $buyerUsername);
+        if (!preg_match('/^[a-zA-Z0-9_]{3,16}$/', $cleanTarget)) {
+            return ['success' => false, 'message' => 'Geçersiz Minecraft oyuncu adı (3-16 karakter).'];
+        }
+
+        // 1. Cüzdandan düş
+        $buyer['credits'] = round($currentCredits - $price, 2);
+        gperm_save_user_record($buyerUsername, $buyer, "crate_key_debit:$buyerUsername:$price", false);
+
+        // 2. Teslimat komutunu kuyruğa yaz: anahtarver {player} {tier} {amount}
+        // GrizmPerms WebSyncService oyunda çevrimiçi olunca veya RCON ile anında teslim eder
+        $deliveryCmd = "anahtarver {$cleanTarget} {$tier} {$amount}";
+        $enqueue = gperm_enqueue_delivery(
+            $cleanTarget,
+            $deliveryCmd,
+            'first',
+            "{$catalogItem['name']} (x{$amount})"
+        );
+
+        if (!$enqueue['success']) {
+            // İade
+            gperm_adjust_user_credits($buyerUsername, $price, 'crate_key_refund');
+            return $enqueue;
+        }
+
+        // 3. Sipariş kaydı oluştur
+        $isSelf = (strtolower($buyerUsername) === strtolower($cleanTarget));
+        $orderNote = $isSelf
+            ? "{$amount}x {$catalogItem['name']} satın alındı"
+            : "{$buyerUsername} tarafından {$cleanTarget} oyuncusuna hediye edildi ({$amount}x {$catalogItem['name']})";
+
+        $order = gperm_log_order([
+            'username' => $cleanTarget,
+            'email' => $buyer['email'] ?? '',
+            'type' => 'crate_key_purchase',
+            'role_id' => $tier,
+            'role_name' => "{$catalogItem['name']} (x{$amount})",
+            'amount' => $price,
+            'duration_days' => 0,
+            'provider' => $isSelf ? 'wallet' : 'wallet_gift',
+            'note' => $orderNote
+        ]);
+
+        $updatedBuyer = gperm_get_user($buyerUsername);
+
         return [
-            'success' => false,
-            'code' => 'insufficient_balance',
-            'credits' => $currentCredits,
-            'required' => $price,
-            'message' => "Yetersiz bakiye! Mevcut bakiyeniz: {$currentCredits} ₺ (Gereken: {$price} ₺, Eksik: {$missing} ₺). Cüzdanınıza bakiye yükleyerek hemen alabilirsiniz."
+            'success' => true,
+            'message' => "Tebrikler! {$amount} adet {$catalogItem['name']} başarıyla teslimat kuyruğuna alındı ve oyunda tanımlandı!",
+            'order' => $order,
+            'credits' => $updatedBuyer['credits'],
+            'tier' => $catalogItem,
+            'amount' => $amount,
+            'total_price' => $price,
+            'target_username' => $cleanTarget,
+            'delivery_id' => $enqueue['delivery_id']
         ];
-    }
-
-    $cleanTarget = trim($targetUsername !== '' ? $targetUsername : $buyerUsername);
-    if (!preg_match('/^[a-zA-Z0-9_]{3,16}$/', $cleanTarget)) {
-        return ['success' => false, 'message' => 'Geçersiz Minecraft oyuncu adı (3-16 karakter).'];
-    }
-
-    // 1. Cüzdandan düş
-    $buyer['credits'] = round($currentCredits - $price, 2);
-    gperm_save_user_record($buyerUsername, $buyer, "crate_key_debit:$buyerUsername:$price", false);
-
-    // 2. Teslimat komutunu kuyruğa yaz: anahtarver {player} {tier} {amount}
-    // GrizmPerms WebSyncService oyunda çevrimiçi olunca veya RCON ile anında teslim eder
-    $deliveryCmd = "anahtarver {$cleanTarget} {$tier} {$amount}";
-    $enqueue = gperm_enqueue_delivery(
-        $cleanTarget,
-        $deliveryCmd,
-        'first',
-        "{$catalogItem['name']} (x{$amount})"
-    );
-
-    if (!$enqueue['success']) {
-        // İade
-        gperm_adjust_user_credits($buyerUsername, $price, 'crate_key_refund');
-        return $enqueue;
-    }
-
-    // 3. Sipariş kaydı oluştur
-    $isSelf = (strtolower($buyerUsername) === strtolower($cleanTarget));
-    $orderNote = $isSelf
-        ? "{$amount}x {$catalogItem['name']} satın alındı"
-        : "{$buyerUsername} tarafından {$cleanTarget} oyuncusuna hediye edildi ({$amount}x {$catalogItem['name']})";
-
-    $order = gperm_log_order([
-        'username' => $cleanTarget,
-        'email' => $buyer['email'] ?? '',
-        'type' => 'crate_key_purchase',
-        'role_id' => $tier,
-        'role_name' => "{$catalogItem['name']} (x{$amount})",
-        'amount' => $price,
-        'duration_days' => 0,
-        'provider' => $isSelf ? 'wallet' : 'wallet_gift',
-        'note' => $orderNote
-    ]);
-
-    $updatedBuyer = gperm_get_user($buyerUsername);
-
-    return [
-        'success' => true,
-        'message' => "Tebrikler! {$amount} adet {$catalogItem['name']} başarıyla teslimat kuyruğuna alındı ve oyunda tanımlandı!",
-        'order' => $order,
-        'credits' => $updatedBuyer['credits'],
-        'tier' => $catalogItem,
-        'amount' => $amount,
-        'total_price' => $price,
-        'target_username' => $cleanTarget,
-        'delivery_id' => $enqueue['delivery_id']
-    ];
+    });
 }
 
 // ============================================================================
@@ -1651,82 +1692,84 @@ function gperm_delete_coupon($code) {
 }
 
 function gperm_redeem_coupon($username, $rawCode) {
-    $code = strtoupper(trim($rawCode));
-    if ($code === '') {
-        return ['success' => false, 'message' => 'Lütfen bir kupon kodu girin.'];
-    }
-
-    $coupons = gperm_get_coupons();
-    if (!isset($coupons[$code]) || empty($coupons[$code]['active'])) {
-        return ['success' => false, 'message' => 'Geçersiz veya pasif kupon kodu.'];
-    }
-
-    $coupon = $coupons[$code];
-    $now = time();
-    if (!empty($coupon['expires_at']) && intval($coupon['expires_at']) < $now) {
-        return ['success' => false, 'message' => 'Bu kupon kodunun kullanım süresi dolmuş.'];
-    }
-
-    $usedBy = $coupon['used_by'] ?? [];
-    $uKey = strtolower(trim($username));
-    if (in_array($uKey, $usedBy, true)) {
-        return ['success' => false, 'message' => 'Bu kupon kodunu zaten kullandınız.'];
-    }
-
-    $maxUses = intval($coupon['max_uses'] ?? 0);
-    if ($maxUses > 0 && count($usedBy) >= $maxUses) {
-        return ['success' => false, 'message' => 'Bu kupon kodunun kullanım limiti dolmuş.'];
-    }
-
-    $coupons[$code]['used_by'][] = $uKey;
-    gperm_write_json('coupons.json', $coupons);
-
-    if ($coupon['type'] === 'vip') {
-        $role = gperm_get_role($coupon['role_id']);
-        $days = intval($coupon['duration_days'] ?? 30);
-        $grant = gperm_grant_user_role($username, $coupon['role_id'], $days, "coupon:$code", true);
-        if (!$grant['success']) {
-            return $grant;
+    return gperm_with_lock(function () use ($username, $rawCode) {
+        $code = strtoupper(trim($rawCode));
+        if ($code === '') {
+            return ['success' => false, 'message' => 'Lütfen bir kupon kodu girin.'];
         }
-        gperm_log_order([
-            'username' => trim($username),
-            'email' => gperm_find_email_for_username($username),
-            'type' => 'coupon_vip',
-            'role_id' => $coupon['role_id'],
-            'role_name' => $role['name'] ?? $coupon['role_id'],
-            'amount' => 0.0,
-            'duration_days' => $days,
-            'provider' => 'coupon',
-            'note' => "Kupon Kodu: $code ({$days} Gün)"
-        ]);
-        $user = gperm_get_user($username);
-        return [
-            'success' => true,
-            'type' => 'vip',
-            'credits' => $user['credits'] ?? 0,
-            'message' => "Tebrikler! {$code} kodu ile {$days} günlük " . ($role['name'] ?? $coupon['role_id']) . " hesabınıza tanımlandı!"
-        ];
-    } else {
-        $amt = floatval($coupon['amount'] ?? 0);
-        $adj = gperm_adjust_user_credits($username, $amt, "coupon:$code");
-        gperm_log_order([
-            'username' => trim($username),
-            'email' => gperm_find_email_for_username($username),
-            'type' => 'coupon_credit',
-            'role_id' => '',
-            'role_name' => 'Cüzdan Bakiyesi',
-            'amount' => $amt,
-            'duration_days' => 0,
-            'provider' => 'coupon',
-            'note' => "Kupon Kodu: $code (+{$amt} ₺)"
-        ]);
-        return [
-            'success' => true,
-            'type' => 'credit',
-            'credits' => $adj['credits'] ?? 0,
-            'message' => "Tebrikler! {$code} kodu ile cüzdanınıza +{$amt} ₺ bakiye eklendi!"
-        ];
-    }
+
+        $coupons = gperm_get_coupons();
+        if (!isset($coupons[$code]) || empty($coupons[$code]['active'])) {
+            return ['success' => false, 'message' => 'Geçersiz veya pasif kupon kodu.'];
+        }
+
+        $coupon = $coupons[$code];
+        $now = time();
+        if (!empty($coupon['expires_at']) && intval($coupon['expires_at']) < $now) {
+            return ['success' => false, 'message' => 'Bu kupon kodunun kullanım süresi dolmuş.'];
+        }
+
+        $usedBy = $coupon['used_by'] ?? [];
+        $uKey = strtolower(trim($username));
+        if (in_array($uKey, $usedBy, true)) {
+            return ['success' => false, 'message' => 'Bu kupon kodunu zaten kullandınız.'];
+        }
+
+        $maxUses = intval($coupon['max_uses'] ?? 0);
+        if ($maxUses > 0 && count($usedBy) >= $maxUses) {
+            return ['success' => false, 'message' => 'Bu kupon kodunun kullanım limiti dolmuş.'];
+        }
+
+        $coupons[$code]['used_by'][] = $uKey;
+        gperm_write_json('coupons.json', $coupons);
+
+        if ($coupon['type'] === 'vip') {
+            $role = gperm_get_role($coupon['role_id']);
+            $days = intval($coupon['duration_days'] ?? 30);
+            $grant = gperm_grant_user_role($username, $coupon['role_id'], $days, "coupon:$code", true);
+            if (!$grant['success']) {
+                return $grant;
+            }
+            gperm_log_order([
+                'username' => trim($username),
+                'email' => gperm_find_email_for_username($username),
+                'type' => 'coupon_vip',
+                'role_id' => $coupon['role_id'],
+                'role_name' => $role['name'] ?? $coupon['role_id'],
+                'amount' => 0.0,
+                'duration_days' => $days,
+                'provider' => 'coupon',
+                'note' => "Kupon Kodu: $code ({$days} Gün)"
+            ]);
+            $user = gperm_get_user($username);
+            return [
+                'success' => true,
+                'type' => 'vip',
+                'credits' => $user['credits'] ?? 0,
+                'message' => "Tebrikler! {$code} kodu ile {$days} günlük " . ($role['name'] ?? $coupon['role_id']) . " hesabınıza tanımlandı!"
+            ];
+        } else {
+            $amt = floatval($coupon['amount'] ?? 0);
+            $adj = gperm_adjust_user_credits($username, $amt, "coupon:$code");
+            gperm_log_order([
+                'username' => trim($username),
+                'email' => gperm_find_email_for_username($username),
+                'type' => 'coupon_credit',
+                'role_id' => '',
+                'role_name' => 'Cüzdan Bakiyesi',
+                'amount' => $amt,
+                'duration_days' => 0,
+                'provider' => 'coupon',
+                'note' => "Kupon Kodu: $code (+{$amt} ₺)"
+            ]);
+            return [
+                'success' => true,
+                'type' => 'credit',
+                'credits' => $adj['credits'] ?? 0,
+                'message' => "Tebrikler! {$code} kodu ile cüzdanınıza +{$amt} ₺ bakiye eklendi!"
+            ];
+        }
+    });
 }
 
 // ============================================================================

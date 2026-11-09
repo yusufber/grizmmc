@@ -35,8 +35,7 @@ security:
   session-timeout-seconds: 300
 
   # Launcher zorunluluğundan muaf oyuncu isimleri (acil durum / konsol için)
-  whitelist-bypass:
-    - "Grizm"
+  whitelist-bypass: []
 
 # Doğrulanmamış Oyuncuyu Kısıtlama Ayarları (Fallback modunda geçerlidir)
 protection:

@@ -58,7 +58,7 @@ public class GiveKeyCommand implements CommandExecutor, TabCompleter {
         int amount = 1;
         if (args.length >= 3) {
             try {
-                amount = Math.max(1, Integer.parseInt(args[2]));
+                amount = Math.min(640, Math.max(1, Integer.parseInt(args[2])));
             } catch (NumberFormatException e) {
                 sender.sendMessage(miniMessage.deserialize("<red>Lütfen geçerli bir sayı girin!</red>"));
                 return true;

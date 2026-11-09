@@ -39,12 +39,25 @@ if ($action === 'start_session') {
     $username = trim($_POST['username'] ?? $inputData['username'] ?? $_GET['username'] ?? '');
     $token = trim($_POST['token'] ?? $inputData['token'] ?? $_GET['token'] ?? '');
     $email = trim($_POST['email'] ?? $inputData['email'] ?? $_GET['email'] ?? '');
+    $serverKey = trim($_SERVER['HTTP_X_SERVER_KEY'] ?? $_POST['server_key'] ?? $inputData['server_key'] ?? $_GET['server_key'] ?? '');
 
     if (empty($username)) {
         http_response_code(400);
         echo json_encode([
             'status' => 'error',
             'message' => 'Kullanıcı adı (username) zorunludur.'
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    // Yalnızca geçerli X-Server-Key gönderildiğinde veya giriş yapmış kendi kullanıcısı için izin ver
+    $hasValidServerKey = (defined('SERVER_API_KEY') && !empty(SERVER_API_KEY) && $serverKey !== '' && hash_equals(SERVER_API_KEY, $serverKey));
+    $hasValidWebSession = (is_logged_in() && get_auth_username() !== null && strtolower($username) === strtolower(get_auth_username()));
+    if (!$hasValidServerKey && !$hasValidWebSession) {
+        http_response_code(403);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Bu kullanıcı adına oturum başlatma yetkiniz bulunmamaktadır.'
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }
@@ -83,17 +96,15 @@ if ($action === 'verify_join') {
         exit;
     }
 
-    // Güvenlik anahtarı kontrolü (varsa doğrula)
-    if (defined('SERVER_API_KEY') && !empty(SERVER_API_KEY) && !empty($serverKey)) {
-        if (!hash_equals(SERVER_API_KEY, $serverKey)) {
-            http_response_code(403);
-            echo json_encode([
-                'status' => 'error',
-                'authenticated' => false,
-                'message' => 'Geçersiz sunucu güvenlik anahtarı (X-Server-Key).'
-            ], JSON_UNESCAPED_UNICODE);
-            exit;
-        }
+    // Zorunlu sunucu güvenlik anahtarı kontrolü
+    if (!defined('SERVER_API_KEY') || empty(SERVER_API_KEY) || !hash_equals(SERVER_API_KEY, $serverKey)) {
+        http_response_code(403);
+        echo json_encode([
+            'status' => 'error',
+            'authenticated' => false,
+            'message' => 'Geçersiz sunucu güvenlik anahtarı (X-Server-Key).'
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
     }
 
     $verifiedSession = verify_launcher_session($username, $playerIp);
@@ -148,6 +159,16 @@ if ($action === 'verify_join') {
 // 3. OYUNCU ÇIKIŞ BİLDİRİMİ (player_quit)
 // ----------------------------------------------------------------------------
 if ($action === 'player_quit') {
+    $serverKey = trim($_SERVER['HTTP_X_SERVER_KEY'] ?? $_POST['server_key'] ?? $inputData['server_key'] ?? $_GET['server_key'] ?? '');
+    if (!defined('SERVER_API_KEY') || empty(SERVER_API_KEY) || !hash_equals(SERVER_API_KEY, $serverKey)) {
+        http_response_code(403);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Geçersiz sunucu güvenlik anahtarı (X-Server-Key).'
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
     $username = trim($_POST['username'] ?? $inputData['username'] ?? $_GET['username'] ?? '');
     if (!empty($username)) {
         close_launcher_session($username);

@@ -98,10 +98,16 @@ public class InventoryClickListener implements Listener {
 
     private void handlePlotMenu(Player player, int slot, ClickType click) {
         ClaimChunk claim = claimManager.getClaim(player.getLocation());
-        if (claim == null) return;
+        if (claim == null) {
+            player.closeInventory();
+            return;
+        }
 
         TownMember member = townManager.getMember(player.getUniqueId());
-        if (member == null) return;
+        if (member == null || !claim.getTownUuid().equals(member.getTownUuid())) {
+            player.closeInventory();
+            return;
+        }
 
         if (slot == 10) {
             // Tip Değiştir

@@ -45,14 +45,14 @@ public class VaultHook {
     }
 
     public boolean takeMoney(OfflinePlayer player, double amount) {
-        if (!isAvailable()) return true; // Vault yoksa engelleme
-        if (amount <= 0) return true;
+        if (!Double.isFinite(amount) || amount <= 0) return false;
+        if (!isAvailable()) return false;
         return economy.withdrawPlayer(player, amount).transactionSuccess();
     }
 
     public boolean giveMoney(OfflinePlayer player, double amount) {
-        if (!isAvailable()) return true;
-        if (amount <= 0) return true;
+        if (!Double.isFinite(amount) || amount <= 0) return false;
+        if (!isAvailable()) return false;
         return economy.depositPlayer(player, amount).transactionSuccess();
     }
 }

@@ -68,7 +68,7 @@ public class Town {
     }
 
     public void deposit(double amount) {
-        if (amount > 0) {
+        if (Double.isFinite(amount) && amount > 0) {
             this.bankBalance += amount;
             if (this.upkeepWarningTime > 0 && this.bankBalance > 0) {
                 this.upkeepWarningTime = 0; // Hazineye para girdiyse harabe korumasını kaldır
@@ -77,7 +77,7 @@ public class Town {
     }
 
     public boolean withdraw(double amount) {
-        if (amount > 0 && this.bankBalance >= amount) {
+        if (Double.isFinite(amount) && amount > 0 && this.bankBalance >= amount) {
             this.bankBalance -= amount;
             return true;
         }
@@ -104,8 +104,9 @@ public class Town {
         return spawnCost;
     }
 
-    public void setSpawnCost(double spawnCost) {
-        this.spawnCost = Math.max(0.0, spawnCost);
+    public void setSpawnCost(double cost) {
+        if (!Double.isFinite(cost) || cost < 0) return;
+        this.spawnCost = cost;
     }
 
     public long getUpkeepWarningTime() {

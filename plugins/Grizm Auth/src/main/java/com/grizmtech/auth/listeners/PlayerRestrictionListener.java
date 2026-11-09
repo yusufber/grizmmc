@@ -15,6 +15,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.*;
 
@@ -69,18 +70,43 @@ public class PlayerRestrictionListener implements Listener {
         Player player = event.getPlayer();
         if (isUnauthenticated(player)) {
             String message = event.getMessage().toLowerCase().trim();
-            boolean isAllowed = false;
-            for (String allowed : ALLOWED_COMMANDS) {
-                if (message.startsWith(allowed)) {
-                    isAllowed = true;
-                    break;
-                }
-            }
+            String cmd = message.split("\\s+")[0];
+            boolean isAllowed = ALLOWED_COMMANDS.contains(cmd);
 
             if (!isAllowed) {
                 event.setCancelled(true);
                 player.sendMessage(settings.commandBlocked);
             }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if (event.getWhoClicked() instanceof Player player) {
+            if (isUnauthenticated(player)) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onSwapHandItems(PlayerSwapHandItemsEvent event) {
+        if (isUnauthenticated(event.getPlayer())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onInteractEntity(PlayerInteractEntityEvent event) {
+        if (isUnauthenticated(event.getPlayer())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onArmorStandManipulate(PlayerArmorStandManipulateEvent event) {
+        if (isUnauthenticated(event.getPlayer())) {
+            event.setCancelled(true);
         }
     }
 

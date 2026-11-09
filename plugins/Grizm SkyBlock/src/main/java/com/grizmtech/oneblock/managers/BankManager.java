@@ -54,7 +54,7 @@ public class BankManager {
     }
 
     public boolean deposit(UUID islandId, Player player, double amount) {
-        if (amount <= 0) {
+        if (!Double.isFinite(amount) || amount <= 0) {
             player.sendMessage(Component.text("Yatırılacak miktar 0'dan büyük olmalıdır!").color(NamedTextColor.RED));
             return false;
         }
@@ -77,7 +77,7 @@ public class BankManager {
     }
 
     public boolean withdraw(UUID islandId, Player player, double amount) {
-        if (amount <= 0) {
+        if (!Double.isFinite(amount) || amount <= 0) {
             player.sendMessage(Component.text("Çekilecek miktar 0'dan büyük olmalıdır!").color(NamedTextColor.RED));
             return false;
         }

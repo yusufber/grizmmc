@@ -11,7 +11,7 @@
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Server-Key, X-Webhook-Secret, X-Webhook-Signature, X-Requested-With');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Server-Key, X-Webhook-Secret, X-Webhook-Signature, X-Requested-With, X-CSRF-Token');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -131,6 +131,9 @@ if ($action === 'game_mutation') {
     switch ($op) {
         case 'grant_role': {
             $username = trim($inputData['username'] ?? '');
+            if (!preg_match('/^[a-zA-Z0-9_]{3,16}$/', $username)) {
+                gperm_json_out(['status' => 'error', 'message' => 'Geçersiz Minecraft oyuncu adı (3-16 karakter).'], 400);
+            }
             $roleId = trim($inputData['role_id'] ?? '');
             $days = intval($inputData['duration_days'] ?? 0);
             $celebrate = !empty($inputData['celebrate']);
@@ -153,6 +156,9 @@ if ($action === 'game_mutation') {
 
         case 'set_role': {
             $username = trim($inputData['username'] ?? '');
+            if (!preg_match('/^[a-zA-Z0-9_]{3,16}$/', $username)) {
+                gperm_json_out(['status' => 'error', 'message' => 'Geçersiz Minecraft oyuncu adı (3-16 karakter).'], 400);
+            }
             $roleId = strtolower(trim($inputData['role_id'] ?? ''));
             $days = intval($inputData['duration_days'] ?? 0);
             $role = gperm_get_role($roleId);
@@ -173,6 +179,9 @@ if ($action === 'game_mutation') {
 
         case 'revoke_role': {
             $username = trim($inputData['username'] ?? '');
+            if (!preg_match('/^[a-zA-Z0-9_]{3,16}$/', $username)) {
+                gperm_json_out(['status' => 'error', 'message' => 'Geçersiz Minecraft oyuncu adı (3-16 karakter).'], 400);
+            }
             $roleId = trim($inputData['role_id'] ?? '');
             $res = gperm_revoke_user_role($username, $roleId, true);
             if (!$res['success']) gperm_json_out(['status' => 'error', 'message' => $res['message']], 400);
@@ -181,6 +190,9 @@ if ($action === 'game_mutation') {
 
         case 'add_user_perm': {
             $username = trim($inputData['username'] ?? '');
+            if (!preg_match('/^[a-zA-Z0-9_]{3,16}$/', $username)) {
+                gperm_json_out(['status' => 'error', 'message' => 'Geçersiz Minecraft oyuncu adı (3-16 karakter).'], 400);
+            }
             $perm = trim($inputData['permission'] ?? '');
             $serverScope = strtolower(trim($inputData['server'] ?? ''));
             if ($username === '' || $perm === '') gperm_json_out(['status' => 'error', 'message' => 'Eksik parametre.'], 400);
@@ -201,6 +213,9 @@ if ($action === 'game_mutation') {
 
         case 'remove_user_perm': {
             $username = trim($inputData['username'] ?? '');
+            if (!preg_match('/^[a-zA-Z0-9_]{3,16}$/', $username)) {
+                gperm_json_out(['status' => 'error', 'message' => 'Geçersiz Minecraft oyuncu adı (3-16 karakter).'], 400);
+            }
             $perm = trim($inputData['permission'] ?? '');
             $serverScope = strtolower(trim($inputData['server'] ?? ''));
             $user = gperm_get_user($username);
@@ -337,6 +352,7 @@ if ($action === 'buy_vip') {
             'message' => 'VIP satın almak için önce GrizmID hesabınızla giriş yapmalısınız.'
         ], 401);
     }
+    verify_csrf_token();
 
     $buyerUsername = get_auth_username();
     $targetUsername = trim($inputData['target_username'] ?? $_POST['target_username'] ?? $buyerUsername);
@@ -373,49 +389,76 @@ if ($action === 'buy_vip') {
             'order' => $res['order']
         ]);
     } else {
-        // Başka bir oyuncuya kendi bakiyesiyle hediye VIP gönderme
-        $price = round(floatval($role['vip_price'] ?? 0), 2);
-        $days = intval($role['vip_duration_days'] ?? 30);
-        $buyer = gperm_get_user($buyerUsername);
-        $currentCredits = round(floatval($buyer['credits'] ?? 0), 2);
-        if ($currentCredits < $price) {
-            $missing = number_format($price - $currentCredits, 2, '.', '');
+        // Başka bir oyuncuya kendi bakiyesiyle hediye VIP gönderme (atomik kilit altında)
+        $giftResult = gperm_with_lock(function () use ($buyerUsername, $targetUsername, $role) {
+            $price = round(floatval($role['vip_price'] ?? 0), 2);
+            $days = intval($role['vip_duration_days'] ?? 30);
+            if ($price <= 0) {
+                return [
+                    'success' => false,
+                    'message' => 'Bu paket şu anda mağaza satışına veya hediye gönderimine kapalıdır.'
+                ];
+            }
+            $buyer = gperm_get_user($buyerUsername);
+            $currentCredits = round(floatval($buyer['credits'] ?? 0), 2);
+            if ($currentCredits < $price) {
+                $missing = number_format($price - $currentCredits, 2, '.', '');
+                return [
+                    'success' => false,
+                    'code' => 'insufficient_balance',
+                    'credits' => $currentCredits,
+                    'message' => "Yetersiz bakiye! Mevcut bakiyeniz: {$currentCredits} ₺ (Eksik: {$missing} ₺)."
+                ];
+            }
+
+            $buyer['credits'] = round($currentCredits - $price, 2);
+            gperm_save_user_record($buyerUsername, $buyer, "gift_debit:$buyerUsername:$price", false);
+
+            $grant = gperm_grant_user_role($targetUsername, $role['id'], $days, "gift_from:$buyerUsername", true);
+            if (!$grant['success']) {
+                gperm_adjust_user_credits($buyerUsername, $price, 'gift_refund');
+                return ['success' => false, 'message' => $grant['message']];
+            }
+
+            $order = gperm_log_order([
+                'username' => $targetUsername,
+                'email' => $buyer['email'] ?? '',
+                'type' => 'vip_gift',
+                'role_id' => $role['id'],
+                'role_name' => $role['name'],
+                'amount' => $price,
+                'duration_days' => $days,
+                'provider' => 'wallet_gift',
+                'note' => "{$buyerUsername} tarafından {$targetUsername} oyuncusuna hediye edildi"
+            ]);
+
+            $updatedBuyer = gperm_get_user($buyerUsername);
+            return [
+                'success' => true,
+                'message' => "{$role['name']} paketi {$targetUsername} adlı oyuncuya başarıyla hediye edildi ve oyunda aktifleşti!",
+                'credits' => $updatedBuyer['credits'] ?? $buyer['credits'],
+                'expires_at' => $grant['expires_at'],
+                'remaining_text' => gperm_format_remaining($grant['expires_at']),
+                'order' => $order
+            ];
+        });
+
+        if (!$giftResult['success']) {
             gperm_json_out([
                 'status' => 'error',
-                'code' => 'insufficient_balance',
-                'credits' => $currentCredits,
-                'message' => "Yetersiz bakiye! Mevcut bakiyeniz: {$currentCredits} ₺ (Eksik: {$missing} ₺)."
+                'code' => $giftResult['code'] ?? 'purchase_failed',
+                'credits' => $giftResult['credits'] ?? 0,
+                'message' => $giftResult['message']
             ], 400);
         }
 
-        $buyer['credits'] = round($currentCredits - $price, 2);
-        gperm_save_user_record($buyerUsername, $buyer, "gift_debit:$buyerUsername:$price", false);
-
-        $grant = gperm_grant_user_role($targetUsername, $role['id'], $days, "gift_from:$buyerUsername", true);
-        if (!$grant['success']) {
-            gperm_adjust_user_credits($buyerUsername, $price, 'gift_refund');
-            gperm_json_out(['status' => 'error', 'message' => $grant['message']], 400);
-        }
-
-        $order = gperm_log_order([
-            'username' => $targetUsername,
-            'email' => $buyer['email'] ?? '',
-            'type' => 'vip_gift',
-            'role_id' => $role['id'],
-            'role_name' => $role['name'],
-            'amount' => $price,
-            'duration_days' => $days,
-            'provider' => 'wallet_gift',
-            'note' => "{$buyerUsername} tarafından {$targetUsername} oyuncusuna hediye edildi"
-        ]);
-
         gperm_json_out([
             'status' => 'success',
-            'message' => "{$role['name']} paketi {$targetUsername} adlı oyuncuya başarıyla hediye edildi ve oyunda aktifleşti!",
-            'credits' => $buyer['credits'],
-            'expires_at' => $grant['expires_at'],
-            'remaining_text' => gperm_format_remaining($grant['expires_at']),
-            'order' => $order
+            'message' => $giftResult['message'],
+            'credits' => $giftResult['credits'],
+            'expires_at' => $giftResult['expires_at'],
+            'remaining_text' => $giftResult['remaining_text'],
+            'order' => $giftResult['order']
         ]);
     }
 }
@@ -428,6 +471,7 @@ if ($action === 'buy_crate_key') {
             'message' => 'Kasa anahtarı satın almak için önce GrizmID hesabınızla giriş yapmalısınız.'
         ], 401);
     }
+    verify_csrf_token();
 
     $buyerUsername = get_auth_username();
     $targetUsername = trim($inputData['target_username'] ?? $_POST['target_username'] ?? $buyerUsername);
@@ -467,6 +511,7 @@ if ($action === 'redeem_coupon') {
     if (!is_logged_in()) {
         gperm_json_out(['status' => 'error', 'code' => 'auth_required', 'message' => 'Kupon kullanmak için önce giriş yapmalısınız.'], 401);
     }
+    verify_csrf_token();
 
     $username = get_auth_username();
     $code = trim($inputData['code'] ?? $_POST['code'] ?? '');
@@ -509,8 +554,8 @@ if ($action === 'payment_webhook') {
     $provider = trim($inputData['provider'] ?? $_POST['provider'] ?? 'payment_gateway');
     $amount = round(floatval($inputData['amount'] ?? $_POST['amount'] ?? 0), 2);
 
-    if ($username === '') {
-        gperm_json_out(['status' => 'error', 'message' => 'Oyuncu adı (username) boş olamaz.'], 400);
+    if (!preg_match('/^[a-zA-Z0-9_]{3,16}$/', $username)) {
+        gperm_json_out(['status' => 'error', 'message' => 'Geçersiz Minecraft oyuncu adı (3-16 karakter).'], 400);
     }
 
     // Mükerrer (idempotency) sipariş kontrolü
@@ -572,6 +617,7 @@ if ($action === 'unlock_panel') {
     if (!is_staff_user()) {
         gperm_json_out(['status' => 'error', 'message' => 'Yetkili erişimi gerekli.'], 403);
     }
+    verify_csrf_token();
     $pin = trim($inputData['pin'] ?? $_POST['pin'] ?? '');
     if (defined('ADMIN_PANEL_PIN') && hash_equals(ADMIN_PANEL_PIN, $pin)) {
         $_SESSION['server_panel_unlocked'] = true;
@@ -581,6 +627,7 @@ if ($action === 'unlock_panel') {
 }
 
 if ($action === 'lock_panel') {
+    verify_csrf_token();
     $_SESSION['server_panel_unlocked'] = false;
     gperm_json_out(['status' => 'success']);
 }
@@ -626,6 +673,7 @@ if ($action === 'admin_overview') {
 
 if ($action === 'admin_save_role') {
     gperm_require_admin_unlocked();
+    verify_csrf_token();
     $res = gperm_save_role($inputData);
     if (!$res['success']) {
         gperm_json_out(['status' => 'error', 'message' => $res['message']], 400);
@@ -635,6 +683,7 @@ if ($action === 'admin_save_role') {
 
 if ($action === 'admin_delete_role') {
     gperm_require_admin_unlocked();
+    verify_csrf_token();
     $roleId = trim($inputData['id'] ?? $_POST['id'] ?? '');
     $res = gperm_delete_role($roleId);
     if (!$res['success']) {
@@ -645,6 +694,7 @@ if ($action === 'admin_delete_role') {
 
 if ($action === 'admin_grant_role') {
     gperm_require_admin_unlocked();
+    verify_csrf_token();
     $username = trim($inputData['username'] ?? '');
     $roleId = trim($inputData['role_id'] ?? '');
     $days = intval($inputData['duration_days'] ?? 0);
@@ -681,6 +731,7 @@ if ($action === 'admin_grant_role') {
 
 if ($action === 'admin_revoke_role') {
     gperm_require_admin_unlocked();
+    verify_csrf_token();
     $username = trim($inputData['username'] ?? '');
     $roleId = trim($inputData['role_id'] ?? '');
     $res = gperm_revoke_user_role($username, $roleId, true);
@@ -692,9 +743,10 @@ if ($action === 'admin_revoke_role') {
 
 if ($action === 'admin_save_user_perms') {
     gperm_require_admin_unlocked();
+    verify_csrf_token();
     $username = trim($inputData['username'] ?? '');
-    if ($username === '') {
-        gperm_json_out(['status' => 'error', 'message' => 'Oyuncu adı gerekli.'], 400);
+    if (!preg_match('/^[a-zA-Z0-9_]{3,16}$/', $username)) {
+        gperm_json_out(['status' => 'error', 'message' => 'Geçerli bir Minecraft oyuncu adı girin (3-16 karakter).'], 400);
     }
     $user = gperm_get_user($username);
     $rawPerms = $inputData['permissions'] ?? [];
@@ -722,6 +774,7 @@ if ($action === 'admin_save_user_perms') {
 
 if ($action === 'admin_adjust_credits') {
     gperm_require_admin_unlocked();
+    verify_csrf_token();
     $username = trim($inputData['username'] ?? '');
     $mode = $inputData['mode'] ?? 'add'; // add | set
     $amount = round(floatval($inputData['amount'] ?? 0), 2);
@@ -762,6 +815,7 @@ if ($action === 'admin_adjust_credits') {
 
 if ($action === 'admin_create_coupon') {
     gperm_require_admin_unlocked();
+    verify_csrf_token();
     $res = gperm_create_coupon($inputData);
     if (!$res['success']) {
         gperm_json_out(['status' => 'error', 'message' => $res['message']], 400);
@@ -771,6 +825,7 @@ if ($action === 'admin_create_coupon') {
 
 if ($action === 'admin_delete_coupon') {
     gperm_require_admin_unlocked();
+    verify_csrf_token();
     $code = trim($inputData['code'] ?? '');
     $res = gperm_delete_coupon($code);
     if (!$res['success']) {
@@ -781,6 +836,7 @@ if ($action === 'admin_delete_coupon') {
 
 if ($action === 'admin_force_sync') {
     gperm_require_admin_unlocked();
+    verify_csrf_token();
     $rev = gperm_bump_revision('admin_force_sync');
     gperm_notify_servers_sync();
     gperm_json_out(['status' => 'success', 'revision' => $rev, 'message' => 'Tüm açık sunuculara anlık senkronizasyon sinyali gönderildi!']);

@@ -49,6 +49,13 @@ public class GrizmAuthCommand implements CommandExecutor, TabCompleter {
 
         String sub = args[0].toLowerCase();
 
+        // Admin alt komutlari icin eger gonderici Player ise dogrulanmis olmasi zorunludur
+        if ((sub.equals("reload") || sub.equals("status") || sub.equals("check"))
+                && sender instanceof Player p && !sessionManager.isAuthenticated(p)) {
+            sender.sendMessage(settings.commandBlocked);
+            return true;
+        }
+
         // 1. RELOAD
         if (sub.equals("reload")) {
             if (!sender.hasPermission("grizmauth.admin")) {

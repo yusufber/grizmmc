@@ -150,6 +150,7 @@ public final class ItemSerializer {
                     int startIndex = decodedJson.indexOf("http");
                     int endIndex = decodedJson.indexOf("\"", startIndex);
                     if (endIndex == -1) endIndex = decodedJson.indexOf("}", startIndex);
+                    if (endIndex <= startIndex) return;
                     String urlStr = decodedJson.substring(startIndex, endIndex).replace("\\/", "/");
                     profile.getTextures().setSkin(URI.create(urlStr).toURL());
                 } else {
@@ -157,12 +158,12 @@ public final class ItemSerializer {
                 }
             }
             skullMeta.setPlayerProfile(profile);
-        } catch (MalformedURLException | IllegalArgumentException e) {
+        } catch (Exception ignored) {
             try {
                 PlayerProfile fallback = Bukkit.createProfile(UUID.randomUUID());
                 fallback.setProperty(new ProfileProperty("textures", texture));
                 skullMeta.setPlayerProfile(fallback);
-            } catch (Exception ignored) {}
+            } catch (Exception ignoredFallback) {}
         }
     }
 }

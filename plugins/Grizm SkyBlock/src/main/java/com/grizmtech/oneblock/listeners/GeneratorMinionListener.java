@@ -3,6 +3,7 @@ package com.grizmtech.oneblock.listeners;
 import com.grizmtech.oneblock.GrizmOneBlock;
 import com.grizmtech.oneblock.managers.GeneratorMinionManager;
 import com.grizmtech.oneblock.models.GeneratorMinion;
+import com.grizmtech.oneblock.models.IslandPermission;
 import com.grizmtech.oneblock.models.IslandRole;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -168,22 +169,13 @@ public class GeneratorMinionListener implements Listener {
         GeneratorMinion targetMinion = minionManager.getPlayerOpenMinion(player.getUniqueId());
 
         if (targetMinion == null) {
-            Location playerLoc = player.getLocation();
-            double minDistance = Double.MAX_VALUE;
-
-            for (GeneratorMinion m : minionManager.getAllMinions()) {
-                if (m.getLocation() != null && m.getLocation().getWorld() != null && m.getLocation().getWorld().equals(playerLoc.getWorld())) {
-                    double dist = m.getLocation().distanceSquared(playerLoc);
-                    if (dist < minDistance && dist <= 64) {
-                        minDistance = dist;
-                        targetMinion = m;
-                    }
-                }
-            }
+            player.closeInventory();
+            return;
         }
 
-        if (targetMinion == null) {
+        if (!plugin.getRoleManager().hasPermission(targetMinion.getOwnerUUID(), player.getUniqueId(), IslandPermission.OPEN_CONTAINER) && !player.isOp()) {
             player.closeInventory();
+            player.sendMessage(Component.text("Bu minyona erişim yetkiniz yok!").color(NamedTextColor.RED));
             return;
         }
 

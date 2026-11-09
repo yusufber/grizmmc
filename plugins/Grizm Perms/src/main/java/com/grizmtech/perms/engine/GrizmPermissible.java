@@ -43,6 +43,9 @@ public class GrizmPermissible extends PermissibleBase {
         if (inName == null) {
             return false;
         }
+        if (inName.equalsIgnoreCase("grizmauth.bypass")) {
+            return false;
+        }
         if (manager != null && player != null) {
             EffectivePermissions eff = manager.getEffectivePermissions(player.getName());
             Boolean resolved = eff.resolve(inName);
@@ -56,6 +59,9 @@ public class GrizmPermissible extends PermissibleBase {
     @Override
     public boolean hasPermission(Permission perm) {
         if (perm == null) {
+            return false;
+        }
+        if (perm.getName().equalsIgnoreCase("grizmauth.bypass")) {
             return false;
         }
         if (manager != null && player != null) {

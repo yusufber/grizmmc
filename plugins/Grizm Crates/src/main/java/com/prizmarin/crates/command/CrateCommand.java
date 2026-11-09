@@ -64,6 +64,29 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        if (args.length >= 3 && args[0].equalsIgnoreCase("givekey")) {
+            if (!sender.hasPermission("kasa.admin")) {
+                sender.sendMessage(plugin.getPrefixedMessage("no-permission"));
+                return true;
+            }
+            Player target = org.bukkit.Bukkit.getPlayer(args[1]);
+            CrateTier tier = CrateTier.fromId(args[2]);
+            if (target != null && tier != null) {
+                int amount = 1;
+                if (args.length >= 4) {
+                    try {
+                        amount = Integer.parseInt(args[3]);
+                    } catch (NumberFormatException e) {
+                        sender.sendMessage(miniMessage.deserialize("<red>Lütfen geçerli bir sayı girin!</red>"));
+                        return true;
+                    }
+                }
+                amount = Math.min(640, Math.max(1, amount));
+                plugin.getKeyManager().giveKey(target, tier, amount);
+            }
+            return true;
+        }
+
         if (!(sender instanceof Player player)) {
             sender.sendMessage(plugin.getPrefixedMessage("player-only"));
             return true;

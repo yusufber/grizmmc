@@ -54,15 +54,7 @@ public class PlayerJoinQuitListener implements Listener {
             return;
         }
 
-        // 2. Bypass kontrolü
-        if (player.hasPermission("grizmauth.bypass") || settings.whitelistBypass.contains(username.toLowerCase())) {
-            UserProfileData bypassProfile = new UserProfileData(username, "", username, "", "BYPASS");
-            sessionManager.authenticate(player, bypassProfile);
-            player.sendMessage(settings.prefix + "§7Yetkili erisimi: Launcher dogrulamasi atlandi.");
-            return;
-        }
-
-        // 3. Fallback: Oyun içi kod doğrulama modu
+        // 2. Fallback: Oyun içi kod doğrulama modu
         sessionManager.startPendingLogin(player.getUniqueId());
 
         if (settings.blindness) {

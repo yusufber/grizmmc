@@ -8,6 +8,7 @@ require_once __DIR__ . '/config.php';
 
 // POST: Başvuru Gönderimi
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'submit_application') {
+    verify_csrf_token();
     if (!is_logged_in()) {
         $_SESSION['flash_error'] = 'Başvuru yapabilmek için lütfen önce giriş yapın.';
         header('Location: login.php');
@@ -54,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 // POST: Yetkili Durum Güncellemesi
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'review_application') {
+    verify_csrf_token();
     if (!is_staff_user()) {
         $_SESSION['flash_error'] = 'Bu işlem için yetkiniz bulunmamaktadır.';
         header('Location: apply.php');
@@ -116,10 +118,6 @@ require_once __DIR__ . '/includes/navbar.php';
             <span class="staff-pill"><i class="fa-solid fa-shield-check"></i> Yetkili</span>
           <?php endif; ?>
         </div>
-        <a href="?toggle_staff=1" class="btn btn-ghost btn-sm" title="Test ve yetkili modunu değiştir">
-          <i class="fa-solid fa-sliders"></i>
-          <span><?php echo $isStaff ? 'Oyuncu Moduna Geç' : 'Yetkili Moduna Geç (Test)'; ?></span>
-        </a>
       </div>
     <?php endif; ?>
 
@@ -224,6 +222,7 @@ require_once __DIR__ . '/includes/navbar.php';
         </div>
 
         <form method="POST" action="apply.php">
+          <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(get_csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
           <input type="hidden" name="action" value="submit_application">
 
           <!-- Pozisyon Seçimi (Görsel Kartlar) -->
@@ -531,6 +530,7 @@ require_once __DIR__ . '/includes/navbar.php';
               <!-- Yetkili Karar & Not Formu -->
               <div style="background: rgba(14, 14, 18, 0.7); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); padding: 20px;">
                 <form method="POST" action="apply.php?tab=staff">
+                  <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(get_csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
                   <input type="hidden" name="action" value="review_application">
                   <input type="hidden" name="app_id" value="<?php echo htmlspecialchars($app['id']); ?>">
 

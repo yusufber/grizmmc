@@ -27,13 +27,51 @@ $error = '';
 $currentUsername = $user['minecraft_username'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf_token();
     $rawUsername = trim($_POST['minecraft_username'] ?? '');
+
+    $userEmailLower = strtolower(trim($user['email'] ?? ''));
+    $isEmailAdmin = in_array($userEmailLower, array_map('strtolower', ADMIN_EMAILS), true);
+    $isReservedAdminName = in_array(strtolower($rawUsername), array_map('strtolower', ADMIN_USERNAMES), true);
+
+    // Kullanıcı adı başka bir e-postaya kayıtlı mı kontrol et (users.json ve user_perms.json)
+    $isUsernameTaken = false;
+    $rawLower = strtolower($rawUsername);
+    if ($rawLower !== '') {
+        $allSavedUsers = get_all_saved_users();
+        foreach ($allSavedUsers as $savedEmail => $savedProfile) {
+            $savedMc = strtolower(trim($savedProfile['minecraft_username'] ?? ''));
+            $ownerEmail = strtolower(trim($savedProfile['email'] ?? $savedEmail));
+            if ($savedMc !== '' && $savedMc === $rawLower && $ownerEmail !== $userEmailLower) {
+                $isUsernameTaken = true;
+                break;
+            }
+        }
+
+        if (!$isUsernameTaken && function_exists('gperm_get_all_user_perms')) {
+            $allPermUsers = gperm_get_all_user_perms(false);
+            foreach ($allPermUsers as $permKey => $permRecord) {
+                $permMc = strtolower(trim($permRecord['username'] ?? $permKey));
+                $permEmail = strtolower(trim($permRecord['email'] ?? ''));
+                if ($permMc !== '' && $permMc === $rawLower) {
+                    if (($permEmail !== '' && $permEmail !== $userEmailLower) || ($permEmail === '' && strtolower($currentUsername) !== $rawLower)) {
+                        $isUsernameTaken = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
 
     // Minecraft kullanıcı adı kuralları: 3-16 karakter, harf, rakam, alt çizgi
     if (empty($rawUsername)) {
         $error = 'Lütfen bir Minecraft kullanıcı adı yazın.';
     } elseif (!preg_match('/^[a-zA-Z0-9_]{3,16}$/', $rawUsername)) {
         $error = 'Kullanıcı adı 3-16 karakter uzunluğunda olmalı ve yalnızca harf, rakam ve alt çizgi (_) içerebilir.';
+    } elseif (!$isEmailAdmin && $isReservedAdminName) {
+        $error = 'Bu kullanıcı adı sistem yöneticilerine ayrılmıştır ve alınamaz.';
+    } elseif ($isUsernameTaken) {
+        $error = 'Bu Minecraft kullanıcı adı başka bir hesaba kayıtlıdır. Lütfen farklı bir kullanıcı adı seçin.';
     } else {
         // Başarıyla kaydet
         save_user_profile($user['email'], [
@@ -102,6 +140,7 @@ require_once __DIR__ . '/includes/navbar.php';
         <?php endif; ?>
 
         <form method="POST" action="">
+          <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(get_csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
           <div class="form-group" style="text-align: left; margin-bottom: 24px;">
             <label for="minecraft_username" class="form-label" style="font-size: 0.82rem; letter-spacing: 1px;">
               Minecraft Oyuncu Adınız (IGN)
